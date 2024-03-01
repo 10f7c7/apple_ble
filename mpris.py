@@ -85,17 +85,17 @@ class Command(dbus.service.Object):
     def PlayPause(self):
         print("PlayPause")
         amsbus.amsToggle()
-        if self.mpris_player_properties["PlaybackStatus"] == "Playing":
-            self.mpris_player_properties["PlaybackStatus"] = "Paused"
-            self.Set(AMS_MPRIS_PLAYER_IFACE, "PlaybackStatus", self.mpris_player_properties["PlaybackStatus"])
-            print ("now Pausing")
-        elif self.mpris_player_properties["PlaybackStatus"] == "Paused":
-            self.mpris_player_properties["PlaybackStatus"] = "Playing"
-            self.Set(AMS_MPRIS_PLAYER_IFACE, "PlaybackStatus", self.mpris_player_properties["PlaybackStatus"])
-            print ("now Playing")
+        # if self.mpris_player_properties["PlaybackStatus"] == "Playing":
+        #     self.mpris_player_properties["PlaybackStatus"] = "Paused"
+        #     self.Set(AMS_MPRIS_PLAYER_IFACE, "PlaybackStatus", self.mpris_player_properties["PlaybackStatus"])
+        #     print ("now Pausing")
+        # elif self.mpris_player_properties["PlaybackStatus"] == "Paused":
+        #     self.mpris_player_properties["PlaybackStatus"] = "Playing"
+        #     self.Set(AMS_MPRIS_PLAYER_IFACE, "PlaybackStatus", self.mpris_player_properties["PlaybackStatus"])
+        #     print ("now Playing")
 
-        self.Set(AMS_MPRIS_PLAYER_IFACE, "PlaybackStatus", self.mpris_player_properties["Playback_Status"])
-        # self.Set(AMS_MPRIS_PLAYER_IFACE, {"PlaybackStatus": self.mpris_player_properties["Playback_Status"]}, [])
+        # self.Set(AMS_MPRIS_PLAYER_IFACE, "PlaybackStatus", self.mpris_player_properties["Playback_Status"])
+        # # self.Set(AMS_MPRIS_PLAYER_IFACE, {"PlaybackStatus": self.mpris_player_properties["Playback_Status"]}, [])
         return True
     
     @dbus.service.method(dbus_interface=AMS_MPRIS_PLAYER_IFACE, in_signature="", out_signature="")
@@ -205,8 +205,8 @@ def changed(iface, changed_props, invalidated_props):
 
                     mpris_player_properties["Metadata"]["mpris:artUrl"] = "file://" + filename
                     break
-                if albuminfo['resultCount'] == 0:
-                    mpris_player_properties["Metadata"]["mpris:artUrl"] = "file:///home/10f7c7/Images/funntcat.jpg"
+            if albuminfo['resultCount'] == 0:
+                mpris_player_properties["Metadata"]["mpris:artUrl"] = "file:///home/10f7c7/Images/funntcat.jpg"
 
 
         
@@ -226,51 +226,64 @@ def changed(iface, changed_props, invalidated_props):
         current_mpris_data = 'Metadata'
         mpris_player_properties["Metadata"]["mpris:length"] = dbus.types.Int64(sstous(changed_props['EntityIDTrack.TrackAttributeIDDuration']))
 
-    if changed_props.get('EntityIDQueue.QueueAttributeIDRepeatMode'):
-        current_mpris_data = 'LoopStatus'
-        if changed_props['EntityIDQueue.QueueAttributeIDRepeatMode'] == 0:
-            mpris_player_properties["LoopStatus"] = "None"
-        elif changed_props['EntityIDQueue.QueueAttributeIDRepeatMode'] == 1:
-            mpris_player_properties["LoopStatus"] = "Track"
-        elif changed_props['EntityIDQueue.QueueAttributeIDRepeatMode'] == 2:
-            mpris_player_properties["LoopStatus"] = "Playlist"
+    # if changed_props.get('EntityIDQueue.QueueAttributeIDRepeatMode'):
+    #     current_mpris_data = 'LoopStatus'
+    #     if changed_props['EntityIDQueue.QueueAttributeIDRepeatMode'] == 0:
+    #         mpris_player_properties["LoopStatus"] = "None"
+    #     elif changed_props['EntityIDQueue.QueueAttributeIDRepeatMode'] == 1:
+    #         mpris_player_properties["LoopStatus"] = "Track"
+    #     elif changed_props['EntityIDQueue.QueueAttributeIDRepeatMode'] == 2:
+    #         mpris_player_properties["LoopStatus"] = "Playlist"
     # print(changed_props)
     if changed_props.get('EntityIDPlayer.PlayerAttributeIDPlaybackInfo'):
         current_mpris_data = 'PlaybackStatus'
         if changed_props['EntityIDPlayer.PlayerAttributeIDPlaybackInfo'][0] == 0:
             mpris_player_properties["PlaybackStatus"] = "Paused"
             print("Paused")
-        if changed_props['EntityIDPlayer.PlayerAttributeIDPlaybackInfo'][0] == 1:
+        elif changed_props['EntityIDPlayer.PlayerAttributeIDPlaybackInfo'][0] == 1:
             mpris_player_properties["PlaybackStatus"] = "Playing"
             print("Playing")
         mpris_dbus.Set(AMS_MPRIS_PLAYER_IFACE, current_mpris_data, mpris_player_properties[current_mpris_data])#str(repr(mpris_player_properties)))
 
         current_mpris_data = 'Rate'
         mpris_player_properties["Rate"] = changed_props['EntityIDPlayer.PlayerAttributeIDPlaybackInfo'][1]
+        mpris_dbus.Set(AMS_MPRIS_PLAYER_IFACE, current_mpris_data, mpris_player_properties[current_mpris_data])#str(repr(mpris_player_properties)))
+  
 
-        current_mpris_data = 'Position'
+
+        current_mpris_data = 'Position'  
         mpris_player_properties["Position"] = dbus.types.Int64(sstous(changed_props['EntityIDPlayer.PlayerAttributeIDPlaybackInfo'][2]))
 
-        mpris_dbus.Set(AMS_MPRIS_PLAYER_IFACE, current_mpris_data, mpris_player_properties[current_mpris_data])#str(repr(mpris_player_properties)))
+        mpris_dbus.Set(AMS_MPRIS_PLAYER_IFACE, current_mpris_data, mpris_player_properties[current_mpris_data])#str(repr(mpris_play  er_properties)))
+        current_mpris_data = None
         return
+  
 
 
-
-    if changed_props.get('EntityIDQueue.QueueAttributeIDShuffleMode'):
-        current_mpris_data = 'Shuffle'
-        if changed_props['EntityIDQueue.QueueAttributeIDShuffleMode'] == 0:
-            mpris_player_properties["Shuffle"] = False
-        elif changed_props['EntityIDQueue.QueueAttributeIDShuffleMode'] == 1 or changed_props['EntityIDQueue.QueueAttributeIDShuffleMode'] == 2:
-            mpris_player_properties["Shuffle"] = True
+    # if changed_props.get('EntityIDQueue.QueueAttributeIDShuffleMode'):    
+    #     current_mpris_data = 'Shuffle'
+    #     if changed_props['EntityIDQueue.QueueAttributeIDShuffleMode'] == 0:
+    #         mpris_player_properties["Shuffle"] = False  
+    #     elif changed_props['EntityIDQueue.QueueAttributeIDShuffleMode'] == 1 or changed_props['EntityIDQueue.QueueAttributeIDShuffleMode'] == 2:
+    #         mpris_player_properties["Shuffle"] = True
 
     # if changed_props.get('EntityIDPlayer.PlayerAttributeIDVolume'):
     #     current_mpris_data = 'Volume'
     #     mpris_player_properties["Volume"] = changed_props['EntityIDPlayer.PlayerAttributeIDVolume']
+    if changed_props.get("EntityIDQueue.QueueAttributeIDIndex"):
+        current_mpris_data = 'Metadata'
 
-    if current_mpris_data:
+    if (current_mpris_data):
         print ("current_mpris_data: ", current_mpris_data)
         print (changed_props)
-        mpris_dbus.Set(AMS_MPRIS_PLAYER_IFACE, current_mpris_data, mpris_player_properties[current_mpris_data])#str(repr(mpris_player_properties)))
+        if current_mpris_data == "Metadata":
+            if (changed_props.get("EntityIDQueue.QueueAttributeIDIndex") or changed_props.get("EntityIDTrack.TrackAttributeIDDuration")):
+                print(mpris_player_properties)
+                mpris_dbus.Set(AMS_MPRIS_PLAYER_IFACE, current_mpris_data, mpris_player_properties[current_mpris_data])#str(repr(mpris_player_properties)))
+            else:
+                return 
+        else:
+            mpris_dbus.Set(AMS_MPRIS_PLAYER_IFACE, current_mpris_data, mpris_player_properties[current_mpris_data])#str(repr(mpris_player_properties)))
     else:
         print ('\n')
         print("what happened: ", iface, " : ", changed_props, " : ",  invalidated_props)
@@ -285,22 +298,22 @@ def initGet():
     mpris_player_properties["Metadata"]["xesam:artist"] = data['EntityIDTrack.TrackAttributeIDArtist']
     mpris_player_properties["Metadata"]["xesam:title"] = data['EntityIDTrack.TrackAttributeIDTitle']
     
-    if data['EntityIDQueue.QueueAttributeIDRepeatMode'] == 0:
-        mpris_player_properties["LoopStatus"] = "None"
-    elif data['EntityIDQueue.QueueAttributeIDRepeatMode'] == 1:
-        mpris_player_properties["LoopStatus"] = "Track"
-    elif data['EntityIDQueue.QueueAttributeIDRepeatMode'] == 2:
-        mpris_player_properties["LoopStatus"] = "Playlist"
+    # if data['EntityIDQueue.QueueAttributeIDRepeatMode'] == 0:
+    #     mpris_player_properties["LoopStatus"] = "None"
+    # elif data['EntityIDQueue.QueueAttributeIDRepeatMode'] == 1:
+    #     mpris_player_properties["LoopStatus"] = "Track"
+    # elif data['EntityIDQueue.QueueAttributeIDRepeatMode'] == 2:
+    #     mpris_player_properties["LoopStatus"] = "Playlist"
     
     if data['EntityIDPlayer.PlayerAttributeIDPlaybackInfo'][0] == 0:
         mpris_player_properties["PlaybackStatus"] = "Paused"
     else:
         mpris_player_properties["PlaybackStatus"] = "Playing"
 
-    if data['EntityIDQueue.QueueAttributeIDShuffleMode'] == 0:
-        mpris_player_properties["Shuffle"] = False
-    elif data['EntityIDQueue.QueueAttributeIDShuffleMode'] == 1 or data['EntityIDQueue.QueueAttributeIDShuffleMode'] == 2:
-        mpris_player_properties["Shuffle"] = True
+    # if data['EntityIDQueue.QueueAttributeIDShuffleMode'] == 0:
+    #     mpris_player_properties["Shuffle"] = False
+    # elif data['EntityIDQueue.QueueAttributeIDShuffleMode'] == 1 or data['EntityIDQueue.QueueAttributeIDShuffleMode'] == 2:
+    #     mpris_player_properties["Shuffle"] = True
     
     mpris_player_properties["Rate"] = data['EntityIDPlayer.PlayerAttributeIDPlaybackInfo'][2]
 
@@ -314,7 +327,7 @@ def initGet():
     if os.path.isfile(filename):
         mpris_player_properties["Metadata"]["mpris:artUrl"] = "file://" + filename
     else:
-        print(f"https://itunes.apple.com/search?media=music&entity=album&attribute=albumTerm&term={term}&limit=4")
+        # print(f"https://itunes.apple.com/search?media=music&entity=album&attribute=albumTerm&term={term}&limit=4")
 
     # print(albuminfo)
         for album in albuminfo['results']:

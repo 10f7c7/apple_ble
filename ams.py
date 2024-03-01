@@ -78,9 +78,9 @@ Entity = {
     },
     'EntityIDQueue': {
         'QueueAttributeIDIndex': None,
-        'QueueAttributeIDCount': None,
-        'QueueAttributeIDShuffleMode': None,
-        'QueueAttributeIDRepeatMode': None
+        'QueueAttributeIDCount': 0,
+        'QueueAttributeIDShuffleMode': 0,
+        'QueueAttributeIDRepeatMode': 0
     },
     'EntityIDTrack': {
         'TrackAttributeIDArtist': None,
@@ -232,11 +232,13 @@ def ams_ent_attr_changed_cb(iface, changed_props, invalidated_props):
     # print('New AMS Track')
 
     value = ENTITY_ATTR(value)
-    # print(value.Value)
     one = list(Entity.keys())[value.EntityID]
     two = list(Entity[one].keys())[value.AttributeID]
+    if two == 'PlayerAttributeIDPlaybackInfo' and Entity['EntityIDPlayer']['PlayerAttributeIDPlaybackInfo']:
+        if (Entity['EntityIDPlayer']['PlayerAttributeIDPlaybackInfo'][0] == tuple(map(float, str(value.Value).split(',')))[0]) and (Entity['EntityIDPlayer']['PlayerAttributeIDPlaybackInfo'][2] != tuple(map(float, str(value.Value).split(',')))[2]):
+            return
     Entity[one][two] = value.Value
-    print(str(datetime.datetime.now()))
+    # print(str(datetime.datetime.now()))
     Entity['ReciveTime']['ReciveTime'] = str(datetime.datetime.now())
     # print(Entity['EntityIDPlayer']['PlayerAttributeIDPlaybackInfo'])
     if (one == 'EntityIDPlayer') and (two == 'PlayerAttributeIDPlaybackInfo'):
@@ -246,6 +248,8 @@ def ams_ent_attr_changed_cb(iface, changed_props, invalidated_props):
     #     key = one
     # else:
     #     key = two
+    # if two == "QueueAttributeIDIndex":
+    # print(two, value.Value)
     ams_dbus.Set(AMS_IFACE, f"{one}.{two}", Entity[one][two])
     writeOut()
 
@@ -278,9 +282,9 @@ def start_client():
             ams_ent_upd_chrc[0].StartNotify(reply_handler=ams_ent_upd_start_notify_cb,
                                             error_handler=generic_error_cb,
                                             dbus_interface=GATT_CHRC_IFACE)
-            ams_ent_upd_chrc[0].WriteValue([0x00, 0x00, 0x01, 0x02], {}, dbus_interface=GATT_CHRC_IFACE)
-            ams_ent_upd_chrc[0].WriteValue([0x01, 0x00, 0x01, 0x02, 0x03], {}, dbus_interface=GATT_CHRC_IFACE)
             ams_ent_upd_chrc[0].WriteValue([0x02, 0x00, 0x01, 0x02, 0x03], {}, dbus_interface=GATT_CHRC_IFACE)
+            ams_ent_upd_chrc[0].WriteValue([0x00, 0x00, 0x01, 0x02], {}, dbus_interface=GATT_CHRC_IFACE)
+            ams_ent_upd_chrc[0].WriteValue([0x01, 0x00], {}, dbus_interface=GATT_CHRC_IFACE)
             Entity['Connected']['Connected'] = True
         except Exception as error:
             print(error, "tree")
