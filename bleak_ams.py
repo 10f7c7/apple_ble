@@ -171,41 +171,6 @@ async def main():
 
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser()
-
-    # device_group = parser.add_mutually_exclusive_group(required=True)
-
-    # device_group.add_argument(
-    #     "--name",
-    #     metavar="<name>",
-    #     help="the name of the bluetooth device to connect to",
-    # )
-    # device_group.add_argument(
-    #     "--address",
-    #     metavar="<address>",
-    #     help="the address of the bluetooth device to connect to",
-    # )
-
-    # parser.add_argument(
-    #     "--macos-use-bdaddr",
-    #     action="store_true",
-    #     help="when true use Bluetooth address instead of UUID on macOS",
-    # )
-
-    # parser.add_argument(
-    #     "characteristic",
-    #     metavar="<notify uuid>",
-    #     help="UUID of a characteristic that supports notifications",
-    # )
-
-    # parser.add_argument(
-    #     "-d",
-    #     "--debug",
-    #     action="store_true",
-    #     help="sets the log level to debug",
-    # )
-
-    # args = parser.parse_args()
 
     log_level = logging.DEBUG if False else logging.INFO
     logging.basicConfig(
