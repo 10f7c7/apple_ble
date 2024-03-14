@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include "Player.h"
+#include "MediaPlayer2.h"
 
 // Yeah, global variable is ugly, but this is just an example and we want to access
 // the concatenator instance from within the concatenate method handler to be able
@@ -18,6 +19,7 @@ int main(int argc, char* argv[]) {
     // auto mpris_opath = sdbus::createObject(*connection, AMS_MPRIS_OPATH);
 
     Player player(*connection, AMS_MPRIS_OPATH);
+    MediaPlayer2 mediaplayer2(*connection, AMS_MPRIS_OPATH);
 
     // g_mpris = mpris_opath.get();
 

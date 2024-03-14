@@ -3,18 +3,6 @@
 #include <string>
 #include <iostream>
 #include "server-glue.h"
-#include "ams.h"
-
-// Yeah, global variable is ugly, but this is just an example and we want to access
-// the concatenator instance from within the concatenate method handler to be able
-// to emit signals.
-// sdbus::IObject* g_mpris{};
-
-// const std::string AMS_MPRIS_OPATH = "/org/mpris/MediaPlayer2";
-// const std::string AMS_MPRIS_IFACE = "org.mpris.MediaPlayer2";
-// const std::string AMS_MPRIS_PLAYER_IFACE = "org.mpris.MediaPlayer2.Player";
-// const std::string AMS_MPRIS_BUS_NAME = "org.mpris.MediaPlayer2.ams";
-
 
 class Player : public sdbus::AdaptorInterfaces<org::mpris::MediaPlayer2::Player_adaptor, sdbus::Properties_adaptor /*, more adaptor classes if there are more interfaces*/>
 {
@@ -39,10 +27,8 @@ protected:
 
     void Pause() override {
         std::cout << "pause" << std::endl;
-        // if (m_PlaybackStatus == "Playing")  {
-            m_PlaybackStatus = "Paused";
-        // }
-        Properties_adaptor::emitPropertiesChangedSignal(AMS_MPRIS_PLAYER_IFACE, { "PlaybackStatus" });
+        m_PlaybackStatus = "Paused";
+        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "PlaybackStatus" });
     }
 
     void PlayPause() override {
@@ -53,20 +39,19 @@ protected:
             m_PlaybackStatus = "Paused";
         }
 
-        Properties_adaptor::emitPropertiesChangedSignal(AMS_MPRIS_PLAYER_IFACE, { "PlaybackStatus" });
+        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "PlaybackStatus" });
     }
 
     void Stop() override {
         std::cout << "stop" << std::endl;
         m_PlaybackStatus = "Stopped";
-        Properties_adaptor::emitPropertiesChangedSignal(AMS_MPRIS_PLAYER_IFACE, { "PlaybackStatus" });
-
+        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "PlaybackStatus" });
     }
 
     void Play() override {
         std::cout << "play" << std::endl;
         m_PlaybackStatus = "Playing";
-        Properties_adaptor::emitPropertiesChangedSignal(AMS_MPRIS_PLAYER_IFACE, { "PlaybackStatus" });
+        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "PlaybackStatus" });
     }
 
     void Seek(const int64_t& Offset) override {
@@ -76,7 +61,7 @@ protected:
     void SetPosition(const sdbus::ObjectPath& TrackId, const int64_t& Position) override {
         std::cout << "setposition" << std::endl;
         m_Position = Position;
-        Properties_adaptor::emitPropertiesChangedSignal(AMS_MPRIS_PLAYER_IFACE, { "Position" });
+        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Position" });
     }
 
     void OpenUri(const std::string& Uri) override {
@@ -96,7 +81,7 @@ protected:
     void Rate(const double& value) override {
         std::cout << "rate" << std::endl;
         m_Rate = value;
-        Properties_adaptor::emitPropertiesChangedSignal(AMS_MPRIS_PLAYER_IFACE, { "Rate" });
+        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Rate" });
     }
 
     std::map<std::string, sdbus::Variant> Metadata() override {
@@ -112,7 +97,7 @@ protected:
     void Volume(const double& value) override {
         std::cout << "volume" << std::endl;
         m_Volume = value;
-        Properties_adaptor::emitPropertiesChangedSignal(AMS_MPRIS_PLAYER_IFACE, { "Volume" });
+        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Volume" });
     }
 
     int64_t Position() override {

@@ -9,6 +9,8 @@
 #include <sdbus-c++/sdbus-c++.h>
 #include <string>
 #include <tuple>
+#include "ams.h"
+
 
 namespace org {
 namespace mpris {
@@ -29,7 +31,6 @@ protected:
         object_->registerProperty("CanRaise").onInterface(INTERFACE_NAME).withGetter([this](){ return this->CanRaise(); });
         object_->registerProperty("HasTrackList").onInterface(INTERFACE_NAME).withGetter([this](){ return this->HasTrackList(); });
         object_->registerProperty("Identity").onInterface(INTERFACE_NAME).withGetter([this](){ return this->Identity(); });
-        object_->registerProperty("DesktopEntry").onInterface(INTERFACE_NAME).withGetter([this](){ return this->DesktopEntry(); });
         object_->registerProperty("SupportedUriSchemes").onInterface(INTERFACE_NAME).withGetter([this](){ return this->SupportedUriSchemes(); });
         object_->registerProperty("SupportedMimeTypes").onInterface(INTERFACE_NAME).withGetter([this](){ return this->SupportedMimeTypes(); });
     }
@@ -50,7 +51,6 @@ private:
     virtual bool CanRaise() = 0;
     virtual bool HasTrackList() = 0;
     virtual std::string Identity() = 0;
-    virtual std::string DesktopEntry() = 0;
     virtual std::vector<std::string> SupportedUriSchemes() = 0;
     virtual std::vector<std::string> SupportedMimeTypes() = 0;
 
