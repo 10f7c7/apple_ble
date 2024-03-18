@@ -5,19 +5,29 @@ project(servers VERSION 1.0)
 
 include( FindPkgConfig )
 
+# find_package(PkgConfig REQUIRED)
+
+# pkg_check_modules(deps REQUIRED IMPORTED_TARGET sdbus-c++ simpleble)
+
+
 find_package(sdbus-c++ REQUIRED)
-
-add_executable(server server.cpp)
-target_link_libraries(server sdbus-c++)
-
-
-add_executable(ble ble.cpp)
-
 find_package(simpleble REQUIRED CONFIG)
-target_link_libraries(ble simpleble::simpleble)
+include_directories("/usr/include/dbus-1.0")
+# find_package(simplebluez REQUIRED CONFIG)
 
-add_executable(notify notify.cpp)
+file(GLOB_RECURSE SRCFILES CONFIGURE_DEPENDS "src/*.cpp")
+add_executable(ams_mpris ${SRCFILES})
+target_link_libraries(ams_mpris PUBLIC rt simpleble::simpleble sdbus-c++)
+
+# add_executable(server src/server.cpp)
+# target_link_libraries(server sdbus-c++)
 
 
-find_package(simplebluez REQUIRED CONFIG)
-target_link_libraries(notify simplebluez::simplebluez)
+# add_executable(ble src/ble.cpp)
+
+# target_link_libraries(ble simpleble::simpleble)
+
+# add_executable(notify notify.cpp)
+
+
+# target_link_libraries(notify simplebluez::simplebluez)

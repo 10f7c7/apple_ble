@@ -2,7 +2,9 @@
 #include <vector>
 #include <string>
 #include <iostream>
-#include "server-glue.h"
+#include "server-glue.hpp"
+#include "BLE.hpp"
+#include "Server.hpp"
 
 class MediaPlayer2 : public sdbus::AdaptorInterfaces<org::mpris::MediaPlayer2_adaptor, sdbus::Properties_adaptor /*, more adaptor classes if there are more interfaces*/>
 {
@@ -24,6 +26,8 @@ protected:
 
     void Quit() override {
         std::cout << "quit" << std::endl;
+        g_pBLE->disconnectThread();
+        g_pServer->disconnectThread();
     }
 
     bool CanQuit() override {

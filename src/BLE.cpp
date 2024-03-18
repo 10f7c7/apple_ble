@@ -1,37 +1,16 @@
 #include <simpleble/SimpleBLE.h>
 #include <iostream>
-#include <thread>
 #include <vector>
-#include <atomic>
 #include <cstring>
+#include <thread>
+#include <chrono>
+#include <atomic>
 
-#include "ams.h"
-
-
-
-std::atomic_bool async_thread_active = true;
-void async_thread_function() {
-    while (async_thread_active) {
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
-    }
-}
-
-void millisecond_delay(int ms) {
-    for (int i = 0; i < ms; i++) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-}
+#include "ams.hpp"
+#include "BLE.hpp"
+#include "Server.hpp"
 
 
-
-
-
-// class ENTITY_ATTR :
-//     def __init__(self, data) :
-//     self.EntityID = int(data[0])
-//     self.AttributeID = int(data[1])
-//     self.EntityUpdateFlags = int(data[2])
-//     self.Value = bytes(data[3:]).decode()#''.join([str(v) for v in data[3:]])
 
 struct ENTITY_ATTR
 {
@@ -41,6 +20,19 @@ struct ENTITY_ATTR
     std::string Value;
 } entity;
 
+
+std::atomic_bool ble_async_thread_active = true;
+void ble_async_thread_function() {
+    while (ble_async_thread_active) {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
+}
+
+void ble_millisecond_delay(int ms) {
+    for (int i = 0; i < ms; i++) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
 
 
 
@@ -72,6 +64,8 @@ void notify_callback(SimpleBLE::ByteArray payload) {
     std::cout << "AttributeID: " << (int)entity.AttributeID << std::endl;
     std::cout << "EntityUpdateFlags: " << (int)entity.EntityUpdateFlags << std::endl;
     std::cout << "Value: " << entity.Value << std::endl << std::endl << std::endl;
+    g_pServer->transferData("helloworld");
+
 
 }
 
@@ -87,18 +81,19 @@ void start_ams(SimpleBLE::Peripheral phone) {
 }
 
 
-int main() {
-    std::thread* async_thread = new std::thread(async_thread_function);
+void CBLE::init() {
+    // std::thread* ble_async_thread = new std::thread(ble_async_thread_function);
 
+    std::cout << "BLE init" << std::endl;
     if (!SimpleBLE::Adapter::bluetooth_enabled()) {
         std::cout << "Bluetooth is not enabled" << std::endl;
-        return 1;
+        return;
     }
 
     auto adapters = SimpleBLE::Adapter::get_adapters();
     if (adapters.empty()) {
         std::cout << "No Bluetooth adapters found" << std::endl;
-        return 1;
+        return;
     }
 
     // Use the first adapter
@@ -109,17 +104,20 @@ int main() {
     std::cout << "Adapter address: " << adapter.address() << std::endl;
 
     SimpleBLE::Peripheral phone;
-
+    
     adapter.set_callback_on_scan_found([&adapter, &phone](SimpleBLE::Peripheral peripheral) {
         // std::cout << "Peripheral found: " << peripheral.address() << std::endl;
         if (peripheral.address() == PHONE_ADDRESS) {
             std::cout << "found phone" << std::endl;
-            adapter.scan_stop();
+            phone = peripheral;
             peripheral.connect();
+            adapter.scan_stop();
             std::cout << "connected" << std::endl;
             start_ams(peripheral);
         }
     });
+
+    connection = phone;
 
     // Start scanning for peripherals
     adapter.scan_start();
@@ -133,15 +131,36 @@ int main() {
         adapter.scan_stop();
     }
 
-    async_thread_active = true;
-    while (!async_thread->joinable()) {
-        millisecond_delay(10);
+    while (ble_async_thread_active) {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
-    async_thread->join();
-    delete async_thread;
-
-
     phone.disconnect();
-    
+
+    // return 0;
+}
+
+
+
+
+int CBLE::disconnect() {
+    // Stop the I/O event loop on the bus connection.
+    // This will cause the connection to disconnect from the bus and then return.
+    // The connection will be destroyed when the last reference to it goes out of scope.
+    connection.disconnect();
     return 0;
+}
+
+void CBLE::disconnectThread() {
+    ble_async_thread_active = false;
+    // while (!ble_async_thread->joinable()) {
+    //     ble_millisecond_delay(10);
+    // }
+    // ble_async_thread->join();
+    // delete ble_async_thread;
+    // connection.disconnect();
+}
+
+std::string CBLE::transferData(std::string data) {
+    std::cout << "transferData: " << data << std::endl;
+    return data;
 }

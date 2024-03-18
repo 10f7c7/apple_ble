@@ -2,7 +2,8 @@
 #include <vector>
 #include <string>
 #include <iostream>
-#include "server-glue.h"
+#include "server-glue.hpp"
+#include "BLE.hpp"
 
 class Player : public sdbus::AdaptorInterfaces<org::mpris::MediaPlayer2::Player_adaptor, sdbus::Properties_adaptor /*, more adaptor classes if there are more interfaces*/>
 {
@@ -38,6 +39,8 @@ protected:
         } else if (m_PlaybackStatus == "Playing")  {
             m_PlaybackStatus = "Paused";
         }
+
+        g_pBLE->transferData("playpause");
 
         Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "PlaybackStatus" });
     }
