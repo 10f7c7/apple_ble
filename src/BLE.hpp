@@ -9,7 +9,8 @@ class CBLE {
 public:
     void init();
     int disconnect();
-    std::string transferData(std::string data);
+    std::string transferData(std::string);
+    int sendCommand(int);
     void disconnectThread();
 
     SimpleBLE::Peripheral connection;

@@ -1,5 +1,5 @@
 #include <string>
-
+#pragma once
 const std::string AMS_MPRIS_OPATH = "/org/mpris/MediaPlayer2";
 const std::string AMS_MPRIS_IFACE = "org.mpris.MediaPlayer2";
 const std::string AMS_MPRIS_PLAYER_IFACE = "org.mpris.MediaPlayer2.Player";

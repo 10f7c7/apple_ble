@@ -67,7 +67,7 @@
         </property>
         <property type="x" name="Position" access="read">
             <annotation
-                name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"></annotation>
+                name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"></annotation>
         </property>
         <property type="d" name="MinimumRate" access="read">
             <annotation

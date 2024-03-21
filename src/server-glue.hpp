@@ -87,7 +87,7 @@ protected:
         object_->registerProperty("Rate").onInterface(INTERFACE_NAME).withGetter([this](){ return this->Rate(); }).withSetter([this](const double& value){ this->Rate(value); }).withUpdateBehavior(sdbus::Flags::EMITS_CHANGE_SIGNAL);
         object_->registerProperty("Metadata").onInterface(INTERFACE_NAME).withGetter([this](){ return this->Metadata(); }).withUpdateBehavior(sdbus::Flags::EMITS_CHANGE_SIGNAL);
         object_->registerProperty("Volume").onInterface(INTERFACE_NAME).withGetter([this](){ return this->Volume(); }).withSetter([this](const double& value){ this->Volume(value); }).withUpdateBehavior(sdbus::Flags::EMITS_CHANGE_SIGNAL);
-        object_->registerProperty("Position").onInterface(INTERFACE_NAME).withGetter([this](){ return this->Position(); }).withUpdateBehavior(sdbus::Flags::EMITS_NO_SIGNAL);
+        object_->registerProperty("Position").onInterface(INTERFACE_NAME).withGetter([this]() { return this->Position(); }).withUpdateBehavior(sdbus::Flags::EMITS_CHANGE_SIGNAL);
         object_->registerProperty("MinimumRate").onInterface(INTERFACE_NAME).withGetter([this](){ return this->MinimumRate(); }).withUpdateBehavior(sdbus::Flags::EMITS_CHANGE_SIGNAL);
         object_->registerProperty("MaximumRate").onInterface(INTERFACE_NAME).withGetter([this](){ return this->MaximumRate(); }).withUpdateBehavior(sdbus::Flags::EMITS_CHANGE_SIGNAL);
         object_->registerProperty("CanGoNext").onInterface(INTERFACE_NAME).withGetter([this](){ return this->CanGoNext(); }).withUpdateBehavior(sdbus::Flags::EMITS_CHANGE_SIGNAL);

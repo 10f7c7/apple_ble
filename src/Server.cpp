@@ -5,7 +5,9 @@
 #include <thread>
 #include <chrono>
 #include <atomic>
-#include "Player.hpp"
+#include <tuple>
+#include <memory>
+#include <sstream>
 #include "MediaPlayer2.hpp"
 #include "Server.hpp"
 
@@ -37,7 +39,8 @@ void CServer::init() {
     // const char* objectPath = "/org/sdbuscpp/concatenator";
     // auto mpris_opath = sdbus::createObject(*connection, AMS_MPRIS_OPATH);
 
-    Player player(*connection, AMS_MPRIS_OPATH);
+    // Player player(*connection, AMS_MPRIS_OPATH);
+    g_pPlayer = std::make_unique<Player>(*connection, AMS_MPRIS_OPATH);
     MediaPlayer2 mediaplayer2(*connection, AMS_MPRIS_OPATH);
 
     // Run the I/O event loop on the bus connection.
@@ -59,9 +62,69 @@ void CServer::init() {
     // g_pBLE->transferData("helloworld");
 }
 
-std::string CServer::transferData(std::string data) {
+std::string CServer::transferData(int id, std::string data) {
     std::cout << "transferData: " << data << std::endl;
-    g_pBLE->transferData("recived");
+    // g_pBLE->transferData("recived");
+
+    std::string key;
+
+    if ((id >> 4) == 0b0000) {
+
+                std::cout << "EntityIDPlayer" << std::endl;
+                if (id == 0x00) {
+                    
+                } else if (id == 0x01) {
+                    std::tuple<int, float, float> dataTuple;
+                    std::stringstream dataStr(data);
+                    std::string PlaybackState, PlaybackRate, ElapsedTime;
+
+                    std::getline(dataStr, PlaybackState, ',');
+                    std::getline(dataStr, PlaybackRate, ',');
+                    std::getline(dataStr, ElapsedTime, ',');
+
+                    int PlaybackStateInt = std::move(stoi(PlaybackState));
+                    float PlaybackRateFloat = std::move(stof(PlaybackRate));
+                    int64_t ElapsedTimeFloat = std::move(stof(ElapsedTime) * 1000000);
+
+                    std::cout << "PlaybackState: " << stoi(PlaybackState) << std::endl;
+                                        std::string playbackStatus;
+                    if (PlaybackStateInt == 0) {
+                        playbackStatus = "Paused";
+                    } else if (PlaybackStateInt == 1) {
+                        playbackStatus = "Playing";
+                    } else if (PlaybackStateInt == 2) {
+                        playbackStatus = "Rewinding";
+                    } else if (PlaybackStateInt == 3) {
+                        playbackStatus = "FastForwarding";
+                    }
+                    std::cout << "playbackStatus: " << playbackStatus << std::endl;
+                    g_pPlayer->updatePlaybackStatus(playbackStatus);
+                    g_pPlayer->updatePlaybackRate(PlaybackRateFloat);
+                    g_pPlayer->updateElapsedTime(ElapsedTimeFloat);
+
+                } else if (id == 0x02) {
+
+                }
+    }
+
+    if ((id >> 4) & 0b0010) {
+        std::cout << "EntityIDTrack" << std::endl;
+        if (id == 0x20) {
+            key = "xesam:artist";
+        } else if (id == 0x21) {
+            key = "xesam:album";
+        } else if (id == 0x22) {
+            key = "xesam:title";
+        } else if (id == 0x23) {
+            key = "mpris:length";
+            std::cout << data  << std::endl;
+            data = std::to_string(std::stoi(data) * 1000000);
+            std::cout << data  << std::endl;
+        }
+        g_pPlayer->updateMetadata(key, data);
+    }
+
+    std::cout << std::endl;
 
     return data;
 }

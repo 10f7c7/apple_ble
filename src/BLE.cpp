@@ -21,7 +21,7 @@ struct ENTITY_ATTR
 } entity;
 
 
-std::atomic_bool ble_async_thread_active = true;
+std::atomic_bool ble_async_thread_active = false;
 void ble_async_thread_function() {
     while (ble_async_thread_active) {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
@@ -37,7 +37,7 @@ void ble_millisecond_delay(int ms) {
 
 
 void notify_callback(SimpleBLE::ByteArray payload) {
-    std::cout << "Notification received: " << payload << std::endl;
+    // std::cout << "Notification received: " << payload << std::endl;
    
     // for (auto byte : payload) {
     //     std::cout << "(" <<  byte << ": ";
@@ -60,11 +60,16 @@ void notify_callback(SimpleBLE::ByteArray payload) {
     entity.EntityUpdateFlags = i[2];
     entity.Value = payload.substr(3, payload.size()-3);
 
-    std::cout << "EntityID: " << (int)entity.EntityID << std::endl;
-    std::cout << "AttributeID: " << (int)entity.AttributeID << std::endl;
-    std::cout << "EntityUpdateFlags: " << (int)entity.EntityUpdateFlags << std::endl;
-    std::cout << "Value: " << entity.Value << std::endl << std::endl << std::endl;
-    g_pServer->transferData("helloworld");
+    // std::cout << "EntityID: " << (int)entity.EntityID << std::endl;
+    // std::cout << "AttributeID: " << (int)entity.AttributeID << std::endl;
+    // std::cout << "EntityUpdateFlags: " << (int)entity.EntityUpdateFlags << std::endl;
+    // std::cout << "Value: " << entity.Value << std::endl << std::endl << std::endl;
+
+    int data = (std::bitset<8>(entity.EntityID).to_ulong() << 4) | std::bitset<8>(entity.AttributeID).to_ulong();
+
+    // std::cout << std::hex << data << std::endl;
+
+    g_pServer->transferData(data, entity.Value);
 
 
 }
@@ -74,10 +79,16 @@ void notify_callback(SimpleBLE::ByteArray payload) {
 
 
 void start_ams(SimpleBLE::Peripheral phone) {
+    try{
     phone.notify(AMS_UUID, ENTITY_UPDATE_UUID, notify_callback);
     phone.write_request(AMS_UUID, ENTITY_UPDATE_UUID, { 0x02, 0x00, 0x01, 0x02, 0x03 });
     phone.write_request(AMS_UUID, ENTITY_UPDATE_UUID, { 0x00, 0x00, 0x01, 0x02 });
     phone.write_request(AMS_UUID, ENTITY_UPDATE_UUID, { 0x01, 0x00, 0x01, 0x02, 0x03 });
+    }
+    catch (std::exception& e) {
+        std::cout << "Exception: " << e.what() << std::endl;
+    }
+    ble_async_thread_active = true;
 }
 
 
@@ -110,26 +121,41 @@ void CBLE::init() {
         if (peripheral.address() == PHONE_ADDRESS) {
             std::cout << "found phone" << std::endl;
             phone = peripheral;
-            peripheral.connect();
+            // peripheral.connect();
             adapter.scan_stop();
+            // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            while (!peripheral.is_connected()) {
+                std::cout << "not conectsetsiu" << std::endl;
+                // start_ams(peripheral);
+                try{
+                    peripheral.connect();
+                }
+                catch (std::exception& e) {
+                    std::cout << "Exception: " << e.what() << std::endl;
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
             std::cout << "connected" << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(3000));
             start_ams(peripheral);
         }
     });
 
-    connection = phone;
 
     // Start scanning for peripherals
     adapter.scan_start();
 
     // Wait for 5 seconds
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    std::this_thread::sleep_for(std::chrono::seconds(8));
 
     // Stop scanning for peripherals
     if (adapter.scan_is_active()) {
         // std::cout << "Stopping scan" << std::endl;
         adapter.scan_stop();
     }
+    connection = phone;
+
 
     while (ble_async_thread_active) {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
@@ -163,4 +189,9 @@ void CBLE::disconnectThread() {
 std::string CBLE::transferData(std::string data) {
     std::cout << "transferData: " << data << std::endl;
     return data;
+}
+
+int CBLE::sendCommand(int command) {
+    connection.write_request(AMS_UUID, REMOTE_COMMAND_UUID, {static_cast<char>(command)});
+    return command;
 }

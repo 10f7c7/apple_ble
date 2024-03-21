@@ -20,10 +20,12 @@ public:
 protected:
     void Next() override {
         std::cout << "next" << std::endl;
+        g_pBLE->sendCommand(0x03);
     }
 
     void Previous() override {
         std::cout << "previous" << std::endl;
+        g_pBLE->sendCommand(0x04);
     }
 
     void Pause() override {
@@ -40,7 +42,8 @@ protected:
             m_PlaybackStatus = "Paused";
         }
 
-        g_pBLE->transferData("playpause");
+        // g_pBLE->transferData("playpause");
+        g_pBLE->sendCommand(0x02);
 
         Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "PlaybackStatus" });
     }
@@ -162,4 +165,34 @@ private:
     bool m_CanPause = true;
     bool m_CanSeek = false;
     bool m_CanControl = true;
+
+public:
+    void updateMetadata(const std::string key, const std::string value) {
+        if (m_Metadata.find(key) != m_Metadata.end()) {
+            m_Metadata.erase(key);
+        }
+        if ((key == "mpris:length")) {
+            m_Metadata.insert({ key, int64_t(std::stoi(value))});
+        } else {
+            m_Metadata.insert({ key, value });
+        }
+        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Metadata" });
+    }
+
+    void updatePlaybackStatus(const std::string status) {
+        m_PlaybackStatus = status;
+        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "PlaybackStatus" });
+    }
+
+    void updatePlaybackRate(const double rate) {
+        m_Rate = rate;
+        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Rate" });
+    }
+
+    void updateElapsedTime(const int64_t time) {
+        m_Position = time;
+        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Position" });
+    }
 };
+
+inline std::unique_ptr<Player> g_pPlayer;

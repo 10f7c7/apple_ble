@@ -62,4 +62,8 @@ private:
     std::string m_Identity = "AMS";
     std::vector<std::string> m_SupportedUriSchemes = { "ams" };
     std::vector<std::string> m_SupportedMimeTypes = { "application/ams" };
+public:
+    
 };
+
+inline std::unique_ptr<MediaPlayer2> g_pMediaPlayer2;
