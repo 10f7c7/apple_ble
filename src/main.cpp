@@ -34,18 +34,18 @@ int main()  {
     // g_pBLE->init();
 
 
-    while (!ble_async_thread->joinable()) {
-        millisecond_delay(10);
-    }
-    ble_async_thread->join();
-    delete ble_async_thread;
     while (!server_async_thread->joinable()) {
         millisecond_delay(10);
     }
     server_async_thread->join();
     delete server_async_thread;
+    while (!ble_async_thread->joinable()) {
+        millisecond_delay(10);
+    }
+    ble_async_thread->join();
+    delete ble_async_thread;
 
-
+    std::cout << "done" << std::endl;
     // g_pBLE->disconnect();
 
 

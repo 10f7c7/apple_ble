@@ -17,7 +17,6 @@ class CServer {
 
     private:
         std::thread* server_async_thread;
-        std::unique_ptr<Player> player;
 };
 
 inline std::unique_ptr<CServer> g_pServer;

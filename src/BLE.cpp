@@ -79,6 +79,8 @@ void notify_callback(SimpleBLE::ByteArray payload) {
 
 
 void start_ams(SimpleBLE::Peripheral phone) {
+    std::this_thread::sleep_for(std::chrono::microseconds(400));
+
     try{
     phone.notify(AMS_UUID, ENTITY_UPDATE_UUID, notify_callback);
     phone.write_request(AMS_UUID, ENTITY_UPDATE_UUID, { 0x02, 0x00, 0x01, 0x02, 0x03 });
@@ -116,7 +118,7 @@ void CBLE::init() {
 
     SimpleBLE::Peripheral phone;
     
-    adapter.set_callback_on_scan_found([&adapter, &phone](SimpleBLE::Peripheral peripheral) {
+    adapter.set_callback_on_scan_found([&/*adapter, &phone*/](SimpleBLE::Peripheral peripheral) {
         // std::cout << "Peripheral found: " << peripheral.address() << std::endl;
         if (peripheral.address() == PHONE_ADDRESS) {
             std::cout << "found phone" << std::endl;
@@ -124,21 +126,31 @@ void CBLE::init() {
             // peripheral.connect();
             adapter.scan_stop();
             // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            // peripheral.connect();
+            // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            // while (!peripheral.is_connected()) {
+            //     std::cout << "not conectsetsiu" << std::endl;
+            //     // start_ams(peripheral);
+            //     try{
+            //         peripheral.connect();
+            //     }
+            //     catch (std::exception& e) {
+            //         std::cout << "Exception: " << e.what() << std::endl;
+            //     }
+            //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            // }
+            // std::cout << "connected" << std::endl;
+            // std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+            // start_ams(peripheral);
+        }
+    });
 
-            while (!peripheral.is_connected()) {
-                std::cout << "not conectsetsiu" << std::endl;
-                // start_ams(peripheral);
-                try{
-                    peripheral.connect();
-                }
-                catch (std::exception& e) {
-                    std::cout << "Exception: " << e.what() << std::endl;
-                }
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            }
-            std::cout << "connected" << std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-            start_ams(peripheral);
+    adapter.set_callback_on_scan_stop([&/*adapter, &phone*/]() {
+        std::cout << "Scan stopped" << std::endl;
+        phone.connect();
+        std::cout << "connected" << std::endl;
+        if (phone.is_connected()) {
+            start_ams(phone);
         }
     });
 
@@ -150,8 +162,9 @@ void CBLE::init() {
     std::this_thread::sleep_for(std::chrono::seconds(8));
 
     // Stop scanning for peripherals
+    std::cout << "checking if scan is active" << std::endl;
     if (adapter.scan_is_active()) {
-        // std::cout << "Stopping scan" << std::endl;
+        std::cout << "Stopping scan" << std::endl;
         adapter.scan_stop();
     }
     connection = phone;

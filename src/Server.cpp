@@ -39,12 +39,13 @@ void CServer::init() {
     // const char* objectPath = "/org/sdbuscpp/concatenator";
     // auto mpris_opath = sdbus::createObject(*connection, AMS_MPRIS_OPATH);
 
+    connection->enterEventLoopAsync();
     // Player player(*connection, AMS_MPRIS_OPATH);
     g_pPlayer = std::make_unique<Player>(*connection, AMS_MPRIS_OPATH);
-    MediaPlayer2 mediaplayer2(*connection, AMS_MPRIS_OPATH);
+    // MediaPlayer2 mediaplayer2(*connection, AMS_MPRIS_OPATH);
+    g_pMediaPlayer2 = std::make_unique<MediaPlayer2>(*connection, AMS_MPRIS_OPATH);
 
     // Run the I/O event loop on the bus connection.
-    connection->enterEventLoopAsync();
     // while (!server_async_thread->joinable()) {
     //     server_millisecond_delay(10);
     // }
@@ -54,12 +55,38 @@ void CServer::init() {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
     
-    connection->releaseName(AMS_MPRIS_BUS_NAME);
-    connection->leaveEventLoop();
-
-
+    // connection->releaseName(AMS_MPRIS_BUS_NAME);
+    // try{
+    // connection->leaveEventLoop();
+    // } catch (const std::exception& e) {
+    //     std::cerr << e.what() << std::endl;
+    // }
+    return;
 
     // g_pBLE->transferData("helloworld");
+}
+
+std::string replace_all(std::string s, std::string const& toReplace, std::string const& replaceWith) {
+    std::string buf;
+    std::size_t pos = 0;
+    std::size_t prevPos;
+
+    // Reserves rough estimate of final size of string.
+    buf.reserve(s.size());
+
+    while (true) {
+        prevPos = pos;
+        pos = s.find(toReplace, pos);
+        if (pos == std::string::npos)
+            break;
+        buf.append(s, prevPos, pos - prevPos);
+        buf += replaceWith;
+        pos += toReplace.size();
+    }
+
+    buf.append(s, prevPos, s.size() - prevPos);
+    s.swap(buf);
+    return s;
 }
 
 std::string CServer::transferData(int id, std::string data) {
@@ -113,6 +140,7 @@ std::string CServer::transferData(int id, std::string data) {
             key = "xesam:artist";
         } else if (id == 0x21) {
             key = "xesam:album";
+            g_pPlayer->updateMetadata("mpris:artUrl", "file:///home/10f7c7/Projects/apple_ble/album_icons/" + replace_all(data, " ", "+"));
         } else if (id == 0x22) {
             key = "xesam:title";
         } else if (id == 0x23) {
@@ -130,6 +158,9 @@ std::string CServer::transferData(int id, std::string data) {
 }
 
 void CServer::disconnectThread() {
+    connection->releaseName(AMS_MPRIS_BUS_NAME);
+    std::cout << "Server disconnected" << std::endl;
+    connection->leaveEventLoop();
     server_async_thread_active = false;
     // while (!server_async_thread->joinable()) {
     //     server_millisecond_delay(10);
@@ -137,8 +168,6 @@ void CServer::disconnectThread() {
     // server_async_thread->join();
     // delete server_async_thread;
 
-    // connection->releaseName(AMS_MPRIS_BUS_NAME);
-    // connection->leaveEventLoop();
 
 }
 
