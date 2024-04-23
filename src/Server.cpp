@@ -8,6 +8,9 @@
 #include <tuple>
 #include <memory>
 #include <sstream>
+#include <filesystem>
+#include <httplib.h>
+#include <nlohmann/json.hpp>
 #include "MediaPlayer2.hpp"
 #include "Server.hpp"
 
@@ -140,7 +143,46 @@ std::string CServer::transferData(int id, std::string data) {
             key = "xesam:artist";
         } else if (id == 0x21) {
             key = "xesam:album";
-            g_pPlayer->updateMetadata("mpris:artUrl", "file:///home/10f7c7/Projects/apple_ble/album_icons/" + replace_all(data, " ", "+"));
+            if (std::filesystem::exists("/home/10f7c7/Projects/apple_ble/album_icons/" + replace_all(data, " ", "+"))) {
+                std::cout << "File exists" << std::endl;
+                g_pPlayer->updateMetadata("mpris:artUrl", "file:///home/10f7c7/Projects/apple_ble/album_icons/" + replace_all(data, " ", "+"));
+            } else {
+                std::cout << "File does not exist" << std::endl;
+                g_pPlayer->updateMetadata("mpris:artUrl", "file:///home/10f7c7/Images/funntcat.jpg");
+
+                httplib::Client cli("http://itunes.apple.com");
+
+                auto res = cli.Get("/search?media=music&entity=album&attribute=albumTerm&term=" + replace_all(data, " ", "+") + "+&limit=4");
+                nlohmann::json obj = nlohmann::json::parse(res->body);
+
+                if (obj.at("results").size() > 0) {
+                    for (int i = 0; i < obj.at("results").size(); i++) {
+                        nlohmann::json album = obj.at("results").at(i);
+                        std::cout << album << std::endl;
+                        if (album.at("artistName") == g_pPlayer->getMetadata("xesam:artist")) {
+                            std::string url = album.at("artworkUrl100").get<std::string>();
+                            std::cout << url << std::endl;
+                            size_t found = url.find_first_of(":");
+                            std::string url_new = url.substr(found + 3); // url excluding http
+                            size_t found2 = url_new.find_first_of("/");
+                            std::string urlBase = url.substr(0, found + 3) + url_new.substr(0, found2); // baseurl
+                            std::cout << urlBase << std::endl;
+                            std::cout << album.at("artworkUrl100").get<std::string>().erase(0, urlBase.size()) << std::endl;
+                            httplib::Client cli2("http://" + url_new.substr(0, found2));
+                            auto res2 = cli2.Get(album.at("artworkUrl100").get<std::string>().erase(0, urlBase.size()));
+                            std::ofstream fd("/home/10f7c7/Projects/apple_ble/album_icons/" + replace_all(data, " ", "+"), std::ios::binary);
+                            fd << res2->body;
+                            fd.close();
+                            g_pPlayer->updateMetadata("mpris:artUrl", "file:///home/10f7c7/Projects/apple_ble/album_icons/" + replace_all(data, " ", "+"));
+                            break;
+                        }
+                    }
+                } else {
+                    std::cout << "No results" << std::endl;
+                }
+
+            }
+
         } else if (id == 0x22) {
             key = "xesam:title";
         } else if (id == 0x23) {

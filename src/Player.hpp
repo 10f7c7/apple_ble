@@ -179,6 +179,13 @@ public:
         Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Metadata" });
     }
 
+    std::string getMetadata(const std::string key) {
+        if (m_Metadata.find(key) != m_Metadata.end()) {
+            return m_Metadata[key];
+        }
+        return "";
+    }
+
     void updatePlaybackStatus(const std::string status) {
         m_PlaybackStatus = status;
         Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "PlaybackStatus" });
