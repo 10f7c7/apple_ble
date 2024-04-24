@@ -173,17 +173,25 @@ public:
         }
         if ((key == "mpris:length")) {
             m_Metadata.insert({ key, int64_t(std::stoi(value))});
-        } else {
+        }
+         else if (key == "xesam:artist") {
+            m_Metadata.insert({ key, std::vector<std::string>{value}});
+        } 
+        else {
             m_Metadata.insert({ key, value });
         }
         Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Metadata" });
     }
 
     std::string getMetadata(const std::string key) {
-        if (m_Metadata.find(key) != m_Metadata.end()) {
-            return m_Metadata[key];
-        }
-        return "";
+        // if (m_Metadata[key].get<std::string>() != "") {
+            if (m_Metadata[key].containsValueOfType<std::vector<std::string>>()) {
+                return m_Metadata[key].get<std::vector<std::string>>()[0];
+            } else {
+                return m_Metadata[key].get<std::string>();
+            }
+        // }
+        // return "";
     }
 
     void updatePlaybackStatus(const std::string status) {
