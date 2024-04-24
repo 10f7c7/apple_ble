@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
-#include "server-glue.hpp"
+#include "ams-server-glue.hpp"
 #include "BLE.hpp"
 
 class Player : public sdbus::AdaptorInterfaces<org::mpris::MediaPlayer2::Player_adaptor, sdbus::Properties_adaptor /*, more adaptor classes if there are more interfaces*/>

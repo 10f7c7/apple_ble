@@ -6,9 +6,9 @@
 #include <chrono>
 #include <atomic>
 
-#include "ams.hpp"
+#include "ble-const.hpp"
 #include "BLE.hpp"
-#include "Server.hpp"
+#include "AMSServer.hpp"
 
 
 
@@ -69,7 +69,7 @@ void notify_callback(SimpleBLE::ByteArray payload) {
 
     // std::cout << std::hex << data << std::endl;
 
-    g_pServer->transferData(data, entity.Value);
+    g_pAMSServer->transferData(data, entity.Value);
 
 
 }

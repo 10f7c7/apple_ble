@@ -7,7 +7,7 @@
 #include "Player.hpp"
 
 
-class CServer {
+class CAMSServer {
     public:
         void init();
         std::string transferData(int, std::string);
@@ -16,7 +16,7 @@ class CServer {
 
 
     private:
-        std::thread* server_async_thread;
+        std::thread* amsserver_async_thread;
 };
 
-inline std::unique_ptr<CServer> g_pServer;
+inline std::unique_ptr<CAMSServer> g_pAMSServer;

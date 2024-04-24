@@ -12,28 +12,28 @@
 #include <httplib.h>
 #include <nlohmann/json.hpp>
 #include "MediaPlayer2.hpp"
-#include "Server.hpp"
+#include "AMSServer.hpp"
 #include "BLE.hpp"
 
 
-std::atomic_bool server_async_thread_active = true;
-void server_async_thread_function() {
-    while (server_async_thread_active) {
+std::atomic_bool ams_server_async_thread_active = true;
+void ams_server_async_thread_function() {
+    while (ams_server_async_thread_active) {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
 }
 
-void server_millisecond_delay(int ms) {
+void ams_server_millisecond_delay(int ms) {
     for (int i = 0; i < ms; i++) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 
 
-void CServer::init() {
+void CAMSServer::init() {
     // Create D-Bus connection to the system bus and requests name on it.
     // const char* serviceName = "org.sdbuscpp.concatenator";
-    std::thread* server_async_thread = new std::thread(server_async_thread_function);
+    std::thread* ams_server_async_thread = new std::thread(ams_server_async_thread_function);
 
     connection = sdbus::createSessionBusConnection(AMS_MPRIS_BUS_NAME);
 
@@ -53,7 +53,7 @@ void CServer::init() {
     // }
     // server_async_thread->join();
     // delete server_async_thread;
-    while (server_async_thread_active) {
+    while (ams_server_async_thread_active) {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
     
@@ -64,8 +64,6 @@ void CServer::init() {
     //     std::cerr << e.what() << std::endl;
     // }
     return;
-
-    // g_pBLE->transferData("helloworld");
 }
 
 std::string replace_all(std::string s, std::string const& toReplace, std::string const& replaceWith) {
@@ -91,7 +89,7 @@ std::string replace_all(std::string s, std::string const& toReplace, std::string
     return s;
 }
 
-std::string CServer::transferData(int id, std::string data) {
+std::string CAMSServer::transferData(int id, std::string data) {
     std::cout << "transferData: " << data << std::endl;
     // g_pBLE->transferData("recived");
 
@@ -198,11 +196,11 @@ std::string CServer::transferData(int id, std::string data) {
     return data;
 }
 
-void CServer::disconnectThread() {
+void CAMSServer::disconnectThread() {
     connection->releaseName(AMS_MPRIS_BUS_NAME);
     std::cout << "Server disconnected" << std::endl;
     connection->leaveEventLoop();
-    server_async_thread_active = false;
+    ams_server_async_thread_active = false;
     // while (!server_async_thread->joinable()) {
     //     server_millisecond_delay(10);
     // }
