@@ -13,7 +13,6 @@
 #include <nlohmann/json.hpp>
 #include "MediaPlayer2.hpp"
 #include "Server.hpp"
-
 #include "BLE.hpp"
 
 
@@ -212,5 +211,3 @@ void CServer::disconnectThread() {
 
 
 }
-
-
