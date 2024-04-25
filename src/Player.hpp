@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
-#include "server-glue.hpp"
+#include "ams-server-glue.hpp"
 #include "BLE.hpp"
 
 class Player : public sdbus::AdaptorInterfaces<org::mpris::MediaPlayer2::Player_adaptor, sdbus::Properties_adaptor /*, more adaptor classes if there are more interfaces*/>
@@ -173,10 +173,25 @@ public:
         }
         if ((key == "mpris:length")) {
             m_Metadata.insert({ key, int64_t(std::stoi(value))});
-        } else {
+        }
+         else if (key == "xesam:artist") {
+            m_Metadata.insert({ key, std::vector<std::string>{value}});
+        } 
+        else {
             m_Metadata.insert({ key, value });
         }
         Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Metadata" });
+    }
+
+    std::string getMetadata(const std::string key) {
+        // if (m_Metadata[key].get<std::string>() != "") {
+            if (m_Metadata[key].containsValueOfType<std::vector<std::string>>()) {
+                return m_Metadata[key].get<std::vector<std::string>>()[0];
+            } else {
+                return m_Metadata[key].get<std::string>();
+            }
+        // }
+        // return "";
     }
 
     void updatePlaybackStatus(const std::string status) {

@@ -6,9 +6,9 @@
 #include <chrono>
 #include <atomic>
 
-#include "ams.hpp"
+#include "ble-const.hpp"
 #include "BLE.hpp"
-#include "Server.hpp"
+#include "AMSServer.hpp"
 
 
 
@@ -69,7 +69,7 @@ void notify_callback(SimpleBLE::ByteArray payload) {
 
     // std::cout << std::hex << data << std::endl;
 
-    g_pServer->transferData(data, entity.Value);
+    g_pAMSServer->transferData(data, entity.Value);
 
 
 }
@@ -90,88 +90,92 @@ void start_ams(SimpleBLE::Peripheral phone) {
     catch (std::exception& e) {
         std::cout << "Exception: " << e.what() << std::endl;
     }
-    ble_async_thread_active = true;
 }
 
 
 void CBLE::init() {
     // std::thread* ble_async_thread = new std::thread(ble_async_thread_function);
 
-    std::cout << "BLE init" << std::endl;
-    if (!SimpleBLE::Adapter::bluetooth_enabled()) {
-        std::cout << "Bluetooth is not enabled" << std::endl;
+    auto adapter_list = SimpleBLE::Safe::Adapter::get_adapters();
+
+    if (!adapter_list.has_value()) {
+        std::cout << "Failed to list adapters" << std::endl;
         return;
     }
 
-    auto adapters = SimpleBLE::Adapter::get_adapters();
-    if (adapters.empty()) {
-        std::cout << "No Bluetooth adapters found" << std::endl;
+    if (adapter_list->empty()) {
+        std::cout << "No adapter was found." << std::endl;
         return;
     }
-
     // Use the first adapter
-    auto adapter = adapters[0];
+    SimpleBLE::Safe::Adapter& adapter = adapter_list->at(0);
+
+    bool ble_scan_on = false;
 
     // Do something with the adapter
-    std::cout << "Adapter identifier: " << adapter.identifier() << std::endl;
-    std::cout << "Adapter address: " << adapter.address() << std::endl;
+    std::cout << "Adapter identifier: " << adapter.identifier().value() << std::endl;
+    std::cout << "Adapter address: " << adapter.address().value() << std::endl;
 
-    SimpleBLE::Peripheral phone;
-    
-    adapter.set_callback_on_scan_found([&/*adapter, &phone*/](SimpleBLE::Peripheral peripheral) {
-        // std::cout << "Peripheral found: " << peripheral.address() << std::endl;
-        if (peripheral.address() == PHONE_ADDRESS) {
-            std::cout << "found phone" << std::endl;
-            phone = peripheral;
-            // peripheral.connect();
+    std::vector<SimpleBLE::Safe::Peripheral> peripherals;
+
+    adapter.set_callback_on_scan_found([&](SimpleBLE::Safe::Peripheral peripheral) {
+        if (peripheral.address().value() == PHONE_ADDRESS) {
+            std::cout << "Found device: " << peripheral.identifier().value_or("UNKNOWN") << " [" << peripheral.address().value_or("UNKNOWN") << "]" << std::endl;
+            peripherals.push_back(peripheral);
             adapter.scan_stop();
-            // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            // peripheral.connect();
-            // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            // while (!peripheral.is_connected()) {
-            //     std::cout << "not conectsetsiu" << std::endl;
-            //     // start_ams(peripheral);
-            //     try{
-            //         peripheral.connect();
-            //     }
-            //     catch (std::exception& e) {
-            //         std::cout << "Exception: " << e.what() << std::endl;
-            //     }
-            //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            // }
-            // std::cout << "connected" << std::endl;
-            // std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-            // start_ams(peripheral);
         }
     });
 
-    adapter.set_callback_on_scan_stop([&/*adapter, &phone*/]() {
-        std::cout << "Scan stopped" << std::endl;
-        phone.connect();
-        std::cout << "connected" << std::endl;
-        if (phone.is_connected()) {
-            start_ams(phone);
-        }
+    adapter.set_callback_on_scan_start([&]() { 
+        std::cout << "Scan started." << std::endl;
+        ble_scan_on = true;
+    });
+    adapter.set_callback_on_scan_stop([&]() { 
+        std::cout << "Scan stopped." << std::endl; 
+        ble_scan_on = false;    
     });
 
-
-    // Start scanning for peripherals
     adapter.scan_start();
+    ble_async_thread_active = true;
 
-    // Wait for 5 seconds
-    std::this_thread::sleep_for(std::chrono::seconds(8));
-
-    // Stop scanning for peripherals
-    std::cout << "checking if scan is active" << std::endl;
-    if (adapter.scan_is_active()) {
-        std::cout << "Stopping scan" << std::endl;
-        adapter.scan_stop();
+    while (ble_scan_on) {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+        
     }
+
+    auto phone = peripherals[0];
+
+    bool connect_was_successful = phone.connect();
+
+    while (!connect_was_successful) {
+        std::cout << "Failed to connect to " << phone.identifier().value_or("UNKNOWN") << " ["
+            << phone.address().value_or("UNKNOWN") << "]" << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout << "Retrying..." << std::endl;
+        connect_was_successful = phone.connect();
+    }
+
+    if (connect_was_successful) {
+        std::cout << "Starting AMS" << std::endl;
+        start_ams(phone);
+    }
+
     connection = phone;
 
 
     while (ble_async_thread_active) {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
+        while (!connection.is_connected()) {
+            std::cout << "Failed to connect to " << phone.identifier().value_or("UNKNOWN") << " ["
+                << phone.address().value_or("UNKNOWN") << "]" << std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::cout << "Retrying..." << std::endl;
+            connect_was_successful = phone.connect();
+            if (connect_was_successful) {
+                std::cout << "Starting AMS" << std::endl;
+                start_ams(phone);
+            }
+        }
     }
     phone.disconnect();
 

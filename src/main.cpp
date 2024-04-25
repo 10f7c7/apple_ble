@@ -2,7 +2,7 @@
 #include <atomic>
 #include <iostream>
 
-#include "Server.hpp"
+#include "AMSServer.hpp"
 #include "BLE.hpp"
 
 
@@ -25,8 +25,8 @@ void millisecond_delay(int ms) {
 int main()  {
     // std::thread* async_thread = new std::thread(async_thread_function);
 
-    g_pServer = std::make_unique<CServer>();
-    std::thread* server_async_thread = new std::thread(&CServer::init, g_pServer.get());
+    g_pAMSServer = std::make_unique<CAMSServer>();
+    std::thread* ams_server_async_thread = new std::thread(&CAMSServer::init, g_pAMSServer.get());
     // g_pServer->init();
     std::cout << "started" << std::endl;
     g_pBLE = std::make_unique<CBLE>();
@@ -34,11 +34,11 @@ int main()  {
     // g_pBLE->init();
 
 
-    while (!server_async_thread->joinable()) {
+    while (!ams_server_async_thread->joinable()) {
         millisecond_delay(10);
     }
-    server_async_thread->join();
-    delete server_async_thread;
+    ams_server_async_thread->join();
+    delete ams_server_async_thread;
     while (!ble_async_thread->joinable()) {
         millisecond_delay(10);
     }
