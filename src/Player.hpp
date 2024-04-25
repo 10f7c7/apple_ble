@@ -1,14 +1,17 @@
 #include <sdbus-c++/sdbus-c++.h>
 #include <vector>
+#include <variant>
 #include <string>
 #include <iostream>
 #include "ams-server-glue.hpp"
 #include "BLE.hpp"
 
+using sdbus::ObjectPath;
+
 class Player : public sdbus::AdaptorInterfaces<org::mpris::MediaPlayer2::Player_adaptor, sdbus::Properties_adaptor /*, more adaptor classes if there are more interfaces*/>
 {
 public:
-    Player(sdbus::IConnection& connection, std::string objectPath)
+    Player(sdbus::IConnection& connection, sdbus::ObjectPath objectPath)
         : AdaptorInterfaces(connection, std::move(objectPath)) {
         registerAdaptor();
     }
@@ -31,7 +34,7 @@ protected:
     void Pause() override {
         std::cout << "pause" << std::endl;
         m_PlaybackStatus = "Paused";
-        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "PlaybackStatus" });
+        Properties_adaptor::emitPropertiesChangedSignal(sdbus::InterfaceName{Player_adaptor::INTERFACE_NAME}, {sdbus::PropertyName{"PlaybackStatus"}});
     }
 
     void PlayPause() override {
@@ -45,19 +48,19 @@ protected:
         // g_pBLE->transferData("playpause");
         g_pBLE->sendCommand(0x02);
 
-        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "PlaybackStatus" });
+        Properties_adaptor::emitPropertiesChangedSignal(sdbus::InterfaceName{ Player_adaptor::INTERFACE_NAME }, { sdbus::PropertyName{"PlaybackStatus"} });
     }
 
     void Stop() override {
         std::cout << "stop" << std::endl;
         m_PlaybackStatus = "Stopped";
-        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "PlaybackStatus" });
+        Properties_adaptor::emitPropertiesChangedSignal(sdbus::InterfaceName{ Player_adaptor::INTERFACE_NAME }, { sdbus::PropertyName{"PlaybackStatus"} });
     }
 
     void Play() override {
         std::cout << "play" << std::endl;
         m_PlaybackStatus = "Playing";
-        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "PlaybackStatus" });
+        Properties_adaptor::emitPropertiesChangedSignal(sdbus::InterfaceName{ Player_adaptor::INTERFACE_NAME }, { sdbus::PropertyName{"PlaybackStatus"} });
     }
 
     void Seek(const int64_t& Offset) override {
@@ -67,7 +70,7 @@ protected:
     void SetPosition(const sdbus::ObjectPath& TrackId, const int64_t& Position) override {
         std::cout << "setposition" << std::endl;
         m_Position = Position;
-        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Position" });
+        Properties_adaptor::emitPropertiesChangedSignal(sdbus::InterfaceName{ Player_adaptor::INTERFACE_NAME }, { sdbus::PropertyName{"Position"} });
     }
 
     void OpenUri(const std::string& Uri) override {
@@ -87,10 +90,10 @@ protected:
     void Rate(const double& value) override {
         std::cout << "rate" << std::endl;
         m_Rate = value;
-        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Rate" });
+        Properties_adaptor::emitPropertiesChangedSignal(sdbus::InterfaceName{ Player_adaptor::INTERFACE_NAME }, { sdbus::PropertyName{"Rate"} });
     }
 
-    std::map<std::string, sdbus::Variant> Metadata() override {
+    std::map<std::string, std::variant<int64_t, std::string, std::vector<std::string>>> Metadata() override {
         std::cout << "metadata" << std::endl;
         return m_Metadata;
     }
@@ -103,7 +106,7 @@ protected:
     void Volume(const double& value) override {
         std::cout << "volume" << std::endl;
         m_Volume = value;
-        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Volume" });
+        Properties_adaptor::emitPropertiesChangedSignal(sdbus::InterfaceName{ Player_adaptor::INTERFACE_NAME }, { sdbus::PropertyName{"Volume"} });
     }
 
     int64_t Position() override {
@@ -154,7 +157,7 @@ protected:
 private:
     std::string m_PlaybackStatus = "Paused";
     double m_Rate = 0.0;
-    std::map<std::string, sdbus::Variant> m_Metadata;
+    std::map<std::string, std::variant<int64_t, std::string, std::vector<std::string>>> m_Metadata;
     double m_Volume = 0.0;
     int64_t m_Position = 0;
     double m_MinimumRate = 0.0;
@@ -175,38 +178,42 @@ public:
             m_Metadata.insert({ key, int64_t(std::stoi(value))});
         }
          else if (key == "xesam:artist") {
-            m_Metadata.insert({ key, std::vector<std::string>{value}});
+            m_Metadata.insert({ key, (std::vector<std::string>){value}});
         } 
         else {
             m_Metadata.insert({ key, value });
         }
-        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Metadata" });
+        Properties_adaptor::emitPropertiesChangedSignal(sdbus::InterfaceName{ Player_adaptor::INTERFACE_NAME }, { sdbus::PropertyName{"Metadata"} });
     }
 
     std::string getMetadata(const std::string key) {
-        // if (m_Metadata[key].get<std::string>() != "") {
-            if (m_Metadata[key].containsValueOfType<std::vector<std::string>>()) {
-                return m_Metadata[key].get<std::vector<std::string>>()[0];
-            } else {
-                return m_Metadata[key].get<std::string>();
-            }
-        // }
-        // return "";
+        if (std::holds_alternative<std::string>(m_Metadata[key])) {
+            return std::get<std::string>(m_Metadata[key]);
+        }
+        else if (std::holds_alternative<std::vector<std::string>>(m_Metadata[key])) {
+            return std::get<std::vector<std::string>>(m_Metadata[key])[0];
+        }
+        else if (std::holds_alternative<int64_t>(m_Metadata[key])) {
+            return std::to_string(std::get<int64_t>(m_Metadata[key]));
+        }
+        else {
+            return "";
+        }
     }
 
     void updatePlaybackStatus(const std::string status) {
         m_PlaybackStatus = status;
-        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "PlaybackStatus" });
+        Properties_adaptor::emitPropertiesChangedSignal(sdbus::InterfaceName{ Player_adaptor::INTERFACE_NAME }, { sdbus::PropertyName{"PlaybackStatus"} });
     }
 
     void updatePlaybackRate(const double rate) {
         m_Rate = rate;
-        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Rate" });
+        Properties_adaptor::emitPropertiesChangedSignal(sdbus::InterfaceName{ Player_adaptor::INTERFACE_NAME }, { sdbus::PropertyName{"Rate"} });
     }
 
     void updateElapsedTime(const int64_t time) {
         m_Position = time;
-        Properties_adaptor::emitPropertiesChangedSignal(Player_adaptor::INTERFACE_NAME, { "Position" });
+        Properties_adaptor::emitPropertiesChangedSignal(sdbus::InterfaceName{ Player_adaptor::INTERFACE_NAME }, { sdbus::PropertyName{"Position"} });
     }
 };
 

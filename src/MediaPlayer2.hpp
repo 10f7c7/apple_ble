@@ -9,7 +9,7 @@
 class MediaPlayer2 : public sdbus::AdaptorInterfaces<org::mpris::MediaPlayer2_adaptor, sdbus::Properties_adaptor /*, more adaptor classes if there are more interfaces*/>
 {
 public:
-    MediaPlayer2(sdbus::IConnection& connection, std::string objectPath)
+    MediaPlayer2(sdbus::IConnection& connection, sdbus::ObjectPath objectPath)
         : AdaptorInterfaces(connection, std::move(objectPath)) {
         registerAdaptor();
     }
@@ -44,6 +44,10 @@ protected:
 
     std::string Identity() override {
         return m_Identity;
+    }
+
+    std::string DesktopEntry() override {
+        return "ams";
     }
 
     std::vector<std::string> SupportedUriSchemes() override {

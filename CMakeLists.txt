@@ -10,15 +10,15 @@ include( FindPkgConfig )
 # pkg_check_modules(deps REQUIRED IMPORTED_TARGET sdbus-c++ simpleble)
 
 
-find_package(sdbus-c++ REQUIRED)
+find_package(sdbus-c++ 2.0 REQUIRED)
 find_package(simpleble REQUIRED CONFIG)
 find_package(nlohmann_json 3.2.0 REQUIRED)
-include_directories("/usr/include/dbus-1.0")
+# include_directories("/usr/include/dbus-1.0")
 # find_package(simplebluez REQUIRED CONFIG)
 
 file(GLOB_RECURSE SRCFILES CONFIGURE_DEPENDS "src/*.cpp")
 add_executable(ams_mpris ${SRCFILES})
-target_link_libraries(ams_mpris PUBLIC rt simpleble::simpleble sdbus-c++ PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(ams_mpris PUBLIC rt simpleble::simpleble PRIVATE nlohmann_json::nlohmann_json SDBusCpp::sdbus-c++)
 
 # add_executable(server src/server.cpp)
 # target_link_libraries(server sdbus-c++)

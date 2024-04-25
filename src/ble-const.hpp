@@ -1,9 +1,10 @@
 #include <string>
+#include <sdbus-c++/sdbus-c++.h>
 #pragma once
-const std::string AMS_MPRIS_OPATH = "/org/mpris/MediaPlayer2";
-const std::string AMS_MPRIS_IFACE = "org.mpris.MediaPlayer2";
-const std::string AMS_MPRIS_PLAYER_IFACE = "org.mpris.MediaPlayer2.Player";
-const std::string AMS_MPRIS_BUS_NAME = "org.mpris.MediaPlayer2.ams";
+const sdbus::ObjectPath AMS_MPRIS_OPATH = sdbus::ObjectPath{"/org/mpris/MediaPlayer2"};
+const sdbus::InterfaceName AMS_MPRIS_IFACE = sdbus::InterfaceName{ "org.mpris.MediaPlayer2" };
+const sdbus::InterfaceName AMS_MPRIS_PLAYER_IFACE = sdbus::InterfaceName{ "org.mpris.MediaPlayer2.Player" };
+const sdbus::BusName AMS_MPRIS_BUS_NAME = sdbus::BusName{ "org.mpris.MediaPlayer2.ams" };
 
 const std::string PHONE_ADDRESS = "B4:56:E3:B8:76:DA";
 const std::string AMS_UUID = "89d3502b-0f36-433a-8ef4-c502ad55f8dc";

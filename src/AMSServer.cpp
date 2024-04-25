@@ -35,7 +35,8 @@ void CAMSServer::init() {
     // const char* serviceName = "org.sdbuscpp.concatenator";
     std::thread* ams_server_async_thread = new std::thread(ams_server_async_thread_function);
 
-    connection = sdbus::createSessionBusConnection(AMS_MPRIS_BUS_NAME);
+    connection = sdbus::createSessionBusConnection();
+    connection->requestName(AMS_MPRIS_BUS_NAME);
 
     // Create concatenator D-Bus object.
     // const char* objectPath = "/org/sdbuscpp/concatenator";
