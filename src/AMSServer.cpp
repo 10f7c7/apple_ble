@@ -96,42 +96,41 @@ std::string CAMSServer::transferData(int id, std::string data) {
     std::string key;
 
     if ((id >> 4) == 0b0000) {
+        std::cout << "EntityIDPlayer" << std::endl;
+        if (id == 0x00) {
+            
+        } else if (id == 0x01) {
+            std::tuple<int, float, float> dataTuple;
+            std::stringstream dataStr(data);
+            std::string PlaybackState, PlaybackRate, ElapsedTime;
 
-                std::cout << "EntityIDPlayer" << std::endl;
-                if (id == 0x00) {
-                    
-                } else if (id == 0x01) {
-                    std::tuple<int, float, float> dataTuple;
-                    std::stringstream dataStr(data);
-                    std::string PlaybackState, PlaybackRate, ElapsedTime;
+            std::getline(dataStr, PlaybackState, ',');
+            std::getline(dataStr, PlaybackRate, ',');
+            std::getline(dataStr, ElapsedTime, ',');
 
-                    std::getline(dataStr, PlaybackState, ',');
-                    std::getline(dataStr, PlaybackRate, ',');
-                    std::getline(dataStr, ElapsedTime, ',');
+            int PlaybackStateInt = std::move(stoi(PlaybackState));
+            float PlaybackRateFloat = std::move(stof(PlaybackRate));
+            int64_t ElapsedTimeFloat = std::move(stof(ElapsedTime) * 1000000);
 
-                    int PlaybackStateInt = std::move(stoi(PlaybackState));
-                    float PlaybackRateFloat = std::move(stof(PlaybackRate));
-                    int64_t ElapsedTimeFloat = std::move(stof(ElapsedTime) * 1000000);
+            std::cout << "PlaybackState: " << stoi(PlaybackState) << std::endl;
+                                std::string playbackStatus;
+            if (PlaybackStateInt == 0) {
+                playbackStatus = "Paused";
+            } else if (PlaybackStateInt == 1) {
+                playbackStatus = "Playing";
+            } else if (PlaybackStateInt == 2) {
+                playbackStatus = "Rewinding";
+            } else if (PlaybackStateInt == 3) {
+                playbackStatus = "FastForwarding";
+            }
+            std::cout << "playbackStatus: " << playbackStatus << std::endl;
+            g_pPlayer->updatePlaybackStatus(playbackStatus);
+            g_pPlayer->updatePlaybackRate(PlaybackRateFloat);
+            g_pPlayer->updateElapsedTime(ElapsedTimeFloat);
 
-                    std::cout << "PlaybackState: " << stoi(PlaybackState) << std::endl;
-                                        std::string playbackStatus;
-                    if (PlaybackStateInt == 0) {
-                        playbackStatus = "Paused";
-                    } else if (PlaybackStateInt == 1) {
-                        playbackStatus = "Playing";
-                    } else if (PlaybackStateInt == 2) {
-                        playbackStatus = "Rewinding";
-                    } else if (PlaybackStateInt == 3) {
-                        playbackStatus = "FastForwarding";
-                    }
-                    std::cout << "playbackStatus: " << playbackStatus << std::endl;
-                    g_pPlayer->updatePlaybackStatus(playbackStatus);
-                    g_pPlayer->updatePlaybackRate(PlaybackRateFloat);
-                    g_pPlayer->updateElapsedTime(ElapsedTimeFloat);
+        } else if (id == 0x02) {
 
-                } else if (id == 0x02) {
-
-                }
+        }
     }
 
     if ((id >> 4) & 0b0010) {
