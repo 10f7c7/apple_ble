@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "AMSServer.hpp"
+#include "ANCSServer.hpp"
 #include "BLE.hpp"
 
 
@@ -29,8 +30,10 @@ int main()  {
     std::thread* ble_async_thread = new std::thread(&CBLE::init, g_pBLE.get());
 
 
-    g_pAMSServer = std::make_unique<CAMSServer>();
-    std::thread* ams_server_async_thread = new std::thread(&CAMSServer::init, g_pAMSServer.get());
+    g_pANCSServer = std::make_unique<CANCSServer>();
+    // std::thread* ancs_server_async_thread = new std::thread(&CAMSServer::init, g_pANCSServer.get());
+    // g_pAMSServer = std::make_unique<CAMSServer>();
+    // std::thread* ams_server_async_thread = new std::thread(&CAMSServer::init, g_pAMSServer.get());
 
     std::cout << "started" << std::endl;
 
@@ -38,16 +41,16 @@ int main()  {
     // g_pServer->init();
 
 
-    while (!ams_server_async_thread->joinable()) {
-        millisecond_delay(10);
-    }
-    ams_server_async_thread->join();
-    delete ams_server_async_thread;
     while (!ble_async_thread->joinable()) {
         millisecond_delay(10);
     }
     ble_async_thread->join();
     delete ble_async_thread;
+    // while (!ams_server_async_thread->joinable()) {
+    //     millisecond_delay(10);
+    // }
+    // ams_server_async_thread->join();
+    // delete ams_server_async_thread;
 
     std::cout << "done" << std::endl;
     // g_pBLE->disconnect();

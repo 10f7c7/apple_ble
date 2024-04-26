@@ -5,21 +5,20 @@
 #include <thread>
 #include <chrono>
 #include <atomic>
-
 #include "ble-const.hpp"
 #include "BLE.hpp"
 #include "AMSServer.hpp"
+#include "ANCSServer.hpp"
 
 
 
-struct ENTITY_ATTR
+struct AMS_ENTITY_ATTR
 {
     uint8_t EntityID;
     uint8_t AttributeID;
     uint8_t EntityUpdateFlags;
     std::string Value;
-} entity;
-
+} ams_entity;
 
 std::atomic_bool ble_async_thread_active = false;
 void ble_async_thread_function() {
@@ -36,9 +35,7 @@ void ble_millisecond_delay(int ms) {
 
 
 
-void notify_callback(SimpleBLE::ByteArray payload) {
-    // std::cout << "Notification received: " << payload << std::endl;
-   
+void ams_notify_callback(SimpleBLE::ByteArray payload) {
     // for (auto byte : payload) {
     //     std::cout << "(" <<  byte << ": ";
     //     std::cout << "" <<  (int)byte << ") ";
@@ -55,37 +52,80 @@ void notify_callback(SimpleBLE::ByteArray payload) {
     // std::memcpy(&value, static_cast<const void*>(payload.data()), sizeof(int));
     // std::cout << value << std::endl;
 
-    entity.EntityID = i[0];
-    entity.AttributeID = i[1];
-    entity.EntityUpdateFlags = i[2];
-    entity.Value = payload.substr(3, payload.size()-3);
+    ams_entity.EntityID = i[0];
+    ams_entity.AttributeID = i[1];
+    ams_entity.EntityUpdateFlags = i[2];
+    ams_entity.Value = payload.substr(3, payload.size()-3);
 
-    // std::cout << "EntityID: " << (int)entity.EntityID << std::endl;
-    // std::cout << "AttributeID: " << (int)entity.AttributeID << std::endl;
-    // std::cout << "EntityUpdateFlags: " << (int)entity.EntityUpdateFlags << std::endl;
-    // std::cout << "Value: " << entity.Value << std::endl << std::endl << std::endl;
+    // std::cout << "EntityID: " << (int)ams_entity.EntityID << std::endl;
+    // std::cout << "AttributeID: " << (int)ams_entity.AttributeID << std::endl;
+    // std::cout << "EntityUpdateFlags: " << (int)ams_entity.EntityUpdateFlags << std::endl;
+    // std::cout << "Value: " << ams_entity.Value << std::endl << std::endl << std::endl;
 
-    int data = (std::bitset<8>(entity.EntityID).to_ulong() << 4) | std::bitset<8>(entity.AttributeID).to_ulong();
+    int data = (std::bitset<8>(ams_entity.EntityID).to_ulong() << 4) | std::bitset<8>(ams_entity.AttributeID).to_ulong();
 
     // std::cout << std::hex << data << std::endl;
 
-    g_pAMSServer->transferData(data, entity.Value);
+    g_pAMSServer->transferData(data, ams_entity.Value);
+}
+
+void ancs_notify_callback(SimpleBLE::ByteArray payload)  {
+    int i[payload.size()];
+    for (int byte = 0; byte < payload.size(); byte++) {
+        i[byte] = (int)payload[byte];
+        std::cout << i[byte] << " ";
+    }
+    std::cout << std::endl;
+
+    ANCS_NOTIF_SRC_ATTR ancs_notif_src;
+
+    ancs_notif_src.EventID = i[0];
+    ancs_notif_src.EventFlags = i[1];
+    ancs_notif_src.CategoryID = i[2]; //unused here
+    ancs_notif_src.CategoryCount = i[3]; //unused here
+    ancs_notif_src.NotificationUID = { i[4], i[5], i[6], i[7] };
+    ancs_notif_src.NotificationUIDDec = (i[4] << 24) | (i[5] << 16) | (i[6] << 8) | i[7];
+
+    std::bitset<32> x(ancs_notif_src.NotificationUIDDec);
+
+    std::cout << "EventID: " << ancs_notif_src.NotificationUID[0] << ", " << ancs_notif_src.NotificationUID[1] << ", " << ancs_notif_src.NotificationUID[2] << ", " << ancs_notif_src.NotificationUID[3] << std::endl;
+    std::cout << "EventID: " << x << std::endl;
+
+    g_pANCSServer->transferData(std::move(ancs_notif_src));
 
 
 }
 
-
-
+void ancs_data_callback(SimpleBLE::ByteArray payload) {
+    int i[payload.size()];
+    for (int byte = 0; byte < payload.size(); byte++) {
+        i[byte] = (int)payload[byte];
+        std::cout << i[byte] << " ";
+    }
+    std::cout << std::endl;
+}
 
 
 void start_ams(SimpleBLE::Peripheral phone) {
     std::this_thread::sleep_for(std::chrono::microseconds(400));
 
     try{
-    phone.notify(AMS_UUID, ENTITY_UPDATE_UUID, notify_callback);
-    phone.write_request(AMS_UUID, ENTITY_UPDATE_UUID, { 0x02, 0x00, 0x01, 0x02, 0x03 });
-    phone.write_request(AMS_UUID, ENTITY_UPDATE_UUID, { 0x00, 0x00, 0x01, 0x02 });
-    phone.write_request(AMS_UUID, ENTITY_UPDATE_UUID, { 0x01, 0x00, 0x01, 0x02, 0x03 });
+        phone.notify(AMS_UUID, AMS_ENTITY_UPDATE_UUID, ams_notify_callback);
+        phone.write_request(AMS_UUID, AMS_ENTITY_UPDATE_UUID, { 0x02, 0x00, 0x01, 0x02, 0x03 });
+        phone.write_request(AMS_UUID, AMS_ENTITY_UPDATE_UUID, { 0x00, 0x00, 0x01, 0x02 });
+        phone.write_request(AMS_UUID, AMS_ENTITY_UPDATE_UUID, { 0x01, 0x00, 0x01, 0x02, 0x03 });
+    }
+    catch (std::exception& e) {
+        std::cout << "Exception: " << e.what() << std::endl;
+    }
+}
+
+void start_ancs(SimpleBLE::Peripheral phone) {
+    std::this_thread::sleep_for(std::chrono::microseconds(400));
+
+    try{
+        phone.notify(ANCS_UUID, ANCS_NOTIF_SRC_UUID, ancs_notify_callback);
+        phone.notify(ANCS_UUID, ANCS_DATA_SRC_UUID, ancs_data_callback);
     }
     catch (std::exception& e) {
         std::cout << "Exception: " << e.what() << std::endl;
@@ -156,8 +196,9 @@ void CBLE::init() {
     }
 
     if (connect_was_successful) {
-        std::cout << "Starting AMS" << std::endl;
-        start_ams(phone);
+        std::cout << "Starting -AMS-/ANCS" << std::endl;
+        // start_ams(phone);
+        start_ancs(phone);
     }
 
     connection = phone;
@@ -172,8 +213,9 @@ void CBLE::init() {
             std::cout << "Retrying..." << std::endl;
             connect_was_successful = phone.connect();
             if (connect_was_successful) {
-                std::cout << "Starting AMS" << std::endl;
-                start_ams(phone);
+                std::cout << "Starting -AMS-/ANCS" << std::endl;
+                // start_ams(phone);
+                start_ancs(phone);
             }
         }
     }
@@ -209,6 +251,27 @@ std::string CBLE::transferData(std::string data) {
 }
 
 int CBLE::sendCommand(int command) {
-    connection.write_request(AMS_UUID, REMOTE_COMMAND_UUID, {static_cast<char>(command)});
+    connection.write_request(AMS_UUID, AMS_REMOTE_COMMAND_UUID, { static_cast<char>(command) });
     return command;
+}
+
+int CBLE::sendNotification(ANCS_NOTIF_SRC_ATTR ancs_notif_src, std::vector<uint8_t> actions) {
+    
+    SimpleBLE::ByteArray data = { 0x00, static_cast<char>(ancs_notif_src.NotificationUID[0]), static_cast<char>(ancs_notif_src.NotificationUID[1]), static_cast<char>(ancs_notif_src.NotificationUID[2]), static_cast<char>(ancs_notif_src.NotificationUID[3]), (0x00), (0x01), static_cast<int8_t>(0xff), static_cast<int8_t>(0xff), (0x02), static_cast<int8_t>(0xff), static_cast<int8_t>(0xff), (0x03), static_cast<int8_t>(0xff), static_cast<int8_t>(0xff), (0x04), (0x05) };
+
+    // for (auto i : data) {
+    //     // str += static_cast<char>(i);
+    //     std::cout << std::bitset<8>(static_cast<int>(i)).to_string() << " "; //to binary
+    //     std::cout << std::hex << static_cast<int>(i) << " | ";
+    // }
+
+    // std::cout << std::endl;
+
+    for (auto i : actions)  {
+        data.push_back(static_cast<char>(i));
+    }
+    
+    connection.write_request(ANCS_UUID, ANCS_CTRL_PT_UUID, data);
+
+    return 1;
 }

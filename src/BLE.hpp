@@ -2,8 +2,8 @@
 
 #include <vector>
 #include <memory>
-#include <unordered_map>
 #include <simpleble/SimpleBLE.h>
+#include "ble-const.hpp"
 
 class CBLE {
 public:
@@ -11,6 +11,7 @@ public:
     int disconnect();
     std::string transferData(std::string);
     int sendCommand(int);
+    int sendNotification(ANCS_NOTIF_SRC_ATTR, std::vector<uint8_t>);
     void disconnectThread();
 
     SimpleBLE::Peripheral connection;

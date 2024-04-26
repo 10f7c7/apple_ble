@@ -1,3 +1,5 @@
+#pragma once
+
 #include <sdbus-c++/sdbus-c++.h>
 #include <vector>
 #include <variant>
