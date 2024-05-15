@@ -20,6 +20,11 @@ std::string CANCSServer::transferData(ANCS_NOTIF_SRC_ATTR ancs_notif_src) {
     std::cout << "EventFlags: " << (int)ancs_notif_src.EventFlags << std::endl;
     notification_index.insert({ ancs_notif_src.NotificationUIDDec, ancs_notif_src.EventFlags });
     if (ancs_notif_src.EventID == 0x02) {
+        std::cout << "phone removed : " << notification_serverid_index[ancs_notif_src.NotificationUIDDec] << std::endl;
+        auto method = proxy->createMethodCall(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_CLOSE_METHOD);
+        method << (uint32_t)notification_serverid_index[ancs_notif_src.NotificationUIDDec];
+        proxy->callMethod(method);
+
         return "";
     }
     bool preexist = ancs_notif_src.EventFlags & (1 << NOTIF_FLAG::PREEXISTING);
@@ -94,11 +99,12 @@ void CANCSServer::write_notification(std::vector<std::variant<std::string, uint3
 
     }
 
-    auto method = proxy->createMethodCall(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_METHOD);
+    auto method = proxy->createMethodCall(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_NOTIFY_METHOD);
     method << appli_name << (uint32_t)0 << filename << std::get<std::string>(attr.at(Title)) << std::get<std::string>(attr.at(Message)) << action << std::map<std::string, std::variant<int>>{{"urgency", 1}, {"ancs", true}} << 10000;
     auto reply = proxy->callMethod(method);
     uint32_t result;
     reply >> result;
+    notification_serverid_index.insert({ std::get<uint32_t>(attr.at(NotificationUID)), result });
     std::cout << "reply: " << std::to_string(result) << std::endl;
 
 }

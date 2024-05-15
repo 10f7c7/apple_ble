@@ -46,6 +46,7 @@ public:
     void write_notification(std::vector<std::variant<std::string, uint32_t>>);
     std::vector<uint8_t> overflow;
     std::map<uint32_t, uint8_t> notification_index;
+    std::map<uint32_t, uint32_t> notification_serverid_index;
     std::vector<std::vector<std::variant<std::string, uint32_t>>> nameless_notification_index;
     std::map<std::string, std::string> application_index;
     std::unique_ptr<sdbus::IProxy> proxy;
