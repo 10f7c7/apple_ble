@@ -16,26 +16,26 @@ void ancs_server_millisecond_delay(int ms) {
 
 std::string CANCSServer::transferData(ANCS_NOTIF_SRC_ATTR ancs_notif_src) {
     std::cout << "transferData" << std::endl;
-    std::cout << "EventID: " << ancs_notif_src.NotificationUIDDec << std::endl;
+    std::cout << "EventID: " << ancs_notif_src.NotificationUID << std::endl;
     std::cout << "EventFlags: " << (int)ancs_notif_src.EventFlags << std::endl;
-    notification_index.insert({ ancs_notif_src.NotificationUIDDec, ancs_notif_src.EventFlags });
-    if (ancs_notif_src.EventID == 0x02) {
-        std::cout << "phone removed : " << notification_serverid_index[ancs_notif_src.NotificationUIDDec] << std::endl;
+    notification_index.insert({ ancs_notif_src.NotificationUID, ancs_notif_src.EventFlags });
+    if (ancs_notif_src.EventID == ANCS_EVENT_ID::NotificationRemoved) {
+        std::cout << "phone removed : " << notification_serverid_index[ancs_notif_src.NotificationUID] << std::endl;
         auto method = proxy->createMethodCall(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_CLOSE_METHOD);
-        method << (uint32_t)notification_serverid_index[ancs_notif_src.NotificationUIDDec];
+        method << (uint32_t)notification_serverid_index[ancs_notif_src.NotificationUID];
         proxy->callMethod(method);
-        notification_serverid_index.erase(ancs_notif_src.NotificationUIDDec);
-        notification_index.erase(ancs_notif_src.NotificationUIDDec);
+        notification_serverid_index.erase(ancs_notif_src.NotificationUID);
+        notification_index.erase(ancs_notif_src.NotificationUID);
         return "";
     }
-    bool preexist = ancs_notif_src.EventFlags & (1 << NOTIF_FLAG::PREEXISTING);
+    bool preexist = ancs_notif_src.EventFlags & (1 << ANCS_EVENT_FLAGS::PreExisting);
 
     std::vector<uint8_t> action;
 
-    if (ancs_notif_src.EventFlags & (1 << NOTIF_FLAG::POSITIVE_ACTION)) {
+    if (ancs_notif_src.EventFlags & (1 << ANCS_EVENT_FLAGS::PositiveAction)) {
         action.insert(action.end(), 0x06);
     }
-    else if (ancs_notif_src.EventFlags & (1 << NOTIF_FLAG::NEGATIVE_ACTION)) {
+    else if (ancs_notif_src.EventFlags & (1 << ANCS_EVENT_FLAGS::NegativeAction)) {
         action.insert(action.end(), 0x07);
     }
 
@@ -48,26 +48,26 @@ std::string CANCSServer::transferData(ANCS_NOTIF_SRC_ATTR ancs_notif_src) {
 void CANCSServer::write_notification(std::vector<std::variant<std::string, uint32_t>> attr) {
     std::vector<std::string> action;
 
-    if (notification_index[std::get<uint32_t>(attr.at(NotificationUID))] & (1 << NOTIF_FLAG::POSITIVE_ACTION)) {
+    if (notification_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] & (1 << ANCS_EVENT_FLAGS::PositiveAction)) {
         std::cout << "POSITIVE_ACTION" << std::endl;
-        action.insert(action.end(), "10f7c7 0 " + std::to_string((int)std::get<uint32_t>(attr.at(NotificationUID))));
-        action.insert(action.end(), std::get<std::string>(attr.at(PositiveActionLabel)));
+        action.insert(action.end(), "10f7c7 0 " + std::to_string((int)std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))));
+        action.insert(action.end(), std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::PositiveActionLabel)));
     }
-    else if (notification_index[std::get<uint32_t>(attr.at(NotificationUID))] & (1 << NOTIF_FLAG::NEGATIVE_ACTION)) {
+    else if (notification_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] & (1 << ANCS_EVENT_FLAGS::NegativeAction)) {
         std::cout << "NEGATIVE_ACTION" << std::endl;
-        action.insert(action.end(), "10f7c7 1 " + std::to_string((int)std::get<uint32_t>(attr.at(NotificationUID))));
-        action.insert(action.end(), std::get<std::string>(attr.at(NegativeActionLabel)));
+        action.insert(action.end(), "10f7c7 1 " + std::to_string((int)std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))));
+        action.insert(action.end(), std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::NegativeActionLabel)));
     }
 
     std::string appli_name;
 
 
-    if (!application_index[std::get<std::string>(attr.at(AppIdentifier))].empty()) {
-        appli_name = application_index[std::get<std::string>(attr.at(AppIdentifier))];
+    if (!application_index[std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier))].empty()) {
+        appli_name = application_index[std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier))];
         std::cout << "appli_name: " << appli_name << std::endl;
     }
     
-    std::string filename = "/home/10f7c7/Projects/apple_ble/app_icons/" + std::get<std::string>(attr.at(AppIdentifier)) + ".jpg";
+    std::string filename = "/home/10f7c7/Projects/apple_ble/app_icons/" + std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)) + ".jpg";
     if (std::filesystem::exists(filename)) {
         std::cout << "icon exists" << std::endl;
     }
@@ -75,7 +75,7 @@ void CANCSServer::write_notification(std::vector<std::variant<std::string, uint3
         std::cout << "icon does not exist" << std::endl;
         httplib::Client cli("http://itunes.apple.com");
 
-        auto res = cli.Get("/lookup/?bundleId=" + std::get<std::string>(attr.at(AppIdentifier)));
+        auto res = cli.Get("/lookup/?bundleId=" + std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)));
         nlohmann::json obj = nlohmann::json::parse(res->body);
 
         if (obj.at("resultCount") == 0) {
@@ -101,11 +101,11 @@ void CANCSServer::write_notification(std::vector<std::variant<std::string, uint3
     }
 
     auto method = proxy->createMethodCall(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_NOTIFY_METHOD);
-    method << appli_name << (uint32_t)0 << filename << std::get<std::string>(attr.at(Title)) << std::get<std::string>(attr.at(Message)) << action << std::map<std::string, std::variant<int>>{{"urgency", 1}, {"ancs", true}} << 10000;
+    method << appli_name << (uint32_t)0 << filename << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Title)) << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Message)) << action << std::map<std::string, std::variant<int>>{{"urgency", 1}, { "ancs", true }} << 10000;
     auto reply = proxy->callMethod(method);
     uint32_t result;
     reply >> result;
-    notification_serverid_index.insert({ std::get<uint32_t>(attr.at(NotificationUID)), result });
+    notification_serverid_index.insert({ std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID)), result });
     std::cout << "reply: " << std::to_string(result) << std::endl;
 
 }
@@ -115,17 +115,17 @@ void CANCSServer::processNotification(std::vector<uint8_t> data)  {
     std::vector<std::variant<std::string, uint32_t>> attr = decodeNotification(data);
 
     if (attr.size() > 3) {
-        std::cout << "attr: " << std::get<std::string>(attr.at(AppIdentifier)) << std::endl;
-        std::cout << "attr: " << std::get<std::string>(attr.at(Title)) << std::endl;
-        std::cout << "attr: " << std::get<std::string>(attr.at(Subtitle)) << std::endl;
-        std::cout << "attr: " << std::get<std::string>(attr.at(Message)) << std::endl;
-        std::cout << "attr: " << std::get<std::string>(attr.at(MessageSize)) << std::endl;
-        std::cout << "attr: " << std::get<std::string>(attr.at(Date)) << std::endl;
-        std::cout << "attr: " << std::get<std::string>(attr.at(PositiveActionLabel)) << std::endl;
-        std::cout << "attr: " << std::get<std::string>(attr.at(NegativeActionLabel)) << std::endl;
+        std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)) << std::endl;
+        std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Title)) << std::endl;
+        std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Subtitle)) << std::endl;
+        std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Message)) << std::endl;
+        std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::MessageSize)) << std::endl;
+        std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)) << std::endl;
+        std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::PositiveActionLabel)) << std::endl;
+        std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::NegativeActionLabel)) << std::endl;
 
-        if (application_index.find(std::get<std::string>(attr.at(AppIdentifier))) == application_index.end()) {
-            g_pBLE->sendApplicationName(std::get<std::string>(attr.at(AppIdentifier)));
+        if (application_index.find(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier))) == application_index.end()) {
+            g_pBLE->sendApplicationName(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)));
             // if (application_index.find(std::get<std::string>(attr.at(AppIdentifier))) == application_index.end()) {
             //     application_index.insert({ std::get<std::string>(attr.at(AppIdentifier)), "" });
             // }
@@ -148,7 +148,7 @@ void CANCSServer::processNotification(std::vector<uint8_t> data)  {
         std::cout << "display_name: " << std::get<std::string>(attr.at(0)) << std::endl;
         std::vector<std::vector<std::variant<std::string, uint32_t>>> temp;
         for (int i = 0; i < nameless_notification_index.size(); i++)  {
-            if (std::get<std::string>(nameless_notification_index.at(i).at(AppIdentifier)) == std::get<std::string>(attr.at(1))) {
+            if (std::get<std::string>(nameless_notification_index.at(i).at(ANCS_NOTIF_ATTR::AppIdentifier)) == std::get<std::string>(attr.at(1))) {
                 write_notification(nameless_notification_index.at(i));
             } else {
                 temp.insert(temp.end(), nameless_notification_index.at(i));
@@ -175,15 +175,14 @@ std::vector<std::variant<std::string, uint32_t>> CANCSServer::decodeNotification
     std::string AppIdentaifier;
     uint32_t NotificationUID;
     uint8_t flags;
-    if (CommandID == 0x01) {
+    if (CommandID == ANCS_COMMAND_ID::GetAppAttributes) {
         std::cout << "CommandID: " << (int)CommandID << std::endl;
         while (data[i] != 0) {
             AppIdentaifier += data[i++];
         }
         i++;
     }
-    if (CommandID == 0x00) {
-        // std::cout << "CommandID: " << (int)CommandID << std::endl;
+    if (CommandID == ANCS_COMMAND_ID::GetNotificationAttributes) {
         NotificationUID = (data[i+3] << 24) | (data[i+2] << 16) | (data[i+1] << 8) | data[i];
         i+=4;
         flags = notification_index[NotificationUID];
@@ -191,7 +190,7 @@ std::vector<std::variant<std::string, uint32_t>> CANCSServer::decodeNotification
 
     while ((i < data.size()) && !of) {
         if (of) std::cout << "of" << i << std::endl;
-        if (ID == 0x01 && CommandID == 0x01)  {
+        if (ID == 0x01 && CommandID == ANCS_COMMAND_ID::GetAppAttributes) {
             eh = true;
             break;
         }
@@ -200,11 +199,11 @@ std::vector<std::variant<std::string, uint32_t>> CANCSServer::decodeNotification
             break;
         }
         if (ID > 0x05) {
-            if (!(flags & (1 << NOTIF_FLAG::POSITIVE_ACTION))) {
+            if (!(flags & (1 << ANCS_EVENT_FLAGS::PositiveAction))) {
                 attributes.insert(attributes.begin()+ID, "");
                 ID++;
             }
-            if (!(flags & (1 << NOTIF_FLAG::NEGATIVE_ACTION))) {
+            if (!(flags & (1 << ANCS_EVENT_FLAGS::NegativeAction))) {
                 attributes.insert(attributes.begin() + ID, "");
                 ID++;
                 break;
@@ -245,10 +244,10 @@ std::vector<std::variant<std::string, uint32_t>> CANCSServer::decodeNotification
         std::cout << "Overflow over" << std::endl;
         overflow.clear();
     }
-    if (CommandID == 0x00) {
+    if (CommandID == ANCS_COMMAND_ID::GetNotificationAttributes) {
         attributes.insert(attributes.begin() + ID, NotificationUID);
     }
-    if (CommandID == 0x01) {
+    if (CommandID == ANCS_COMMAND_ID::GetAppAttributes) {
         attributes.insert(attributes.begin() + ID, AppIdentaifier);
         // application_name_pause = false;
     }

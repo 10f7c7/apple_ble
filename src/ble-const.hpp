@@ -33,6 +33,6 @@ struct ANCS_NOTIF_SRC_ATTR
     uint8_t EventFlags;
     uint8_t CategoryID;
     uint8_t CategoryCount;
-    std::vector<int> NotificationUID;
-    uint32_t NotificationUIDDec;
+    std::vector<int> NotificationUIDvec;
+    uint32_t NotificationUID;
 };

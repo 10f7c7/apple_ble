@@ -23,12 +23,12 @@ public:
     void init();
     std::string transferData(ANCS_NOTIF_SRC_ATTR);
     void disconnectThread();
-    enum NOTIF_FLAG {
-        SILENT = 0x00,
-        IMPORTANT = 0x01,
-        PREEXISTING = 0x02,
-        POSITIVE_ACTION = 0x03,
-        NEGATIVE_ACTION = 0x04,
+    enum ANCS_EVENT_FLAGS {
+        Silent = 0x00,
+        Important = 0x01,
+        PreExisting = 0x02,
+        PositiveAction = 0x03,
+        NegativeAction = 0x04,
     };
     enum ANCS_NOTIF_ATTR {
         AppIdentifier = 0x00,
@@ -40,6 +40,16 @@ public:
         PositiveActionLabel = 0x06,
         NegativeActionLabel = 0x07,
         NotificationUID = 0x08,
+    };
+    enum ANCS_EVENT_ID {
+        NotificationAdded = 0x00,
+        NotificationModified = 0x01,
+        NotificationRemoved = 0x02,
+    };
+    enum ANCS_COMMAND_ID {
+        GetNotificationAttributes = 0x00,
+        GetAppAttributes = 0x01,
+        PerformNotificationAction = 0x02,
     };
     std::vector<std::variant<std::string, uint32_t>> decodeNotification(std::vector<uint8_t>);
     void processNotification(std::vector<uint8_t>);
