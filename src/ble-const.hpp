@@ -7,6 +7,13 @@ const sdbus::InterfaceName AMS_MPRIS_IFACE = sdbus::InterfaceName{ "org.mpris.Me
 const sdbus::InterfaceName AMS_MPRIS_PLAYER_IFACE = sdbus::InterfaceName{ "org.mpris.MediaPlayer2.Player" };
 const sdbus::BusName AMS_MPRIS_BUS_NAME = sdbus::BusName{ "org.mpris.MediaPlayer2.ams" };
 
+const sdbus::ObjectPath ANCS_NOTIFICATIONS_OPATH = sdbus::ObjectPath{ "/org/freedesktop/Notifications" };
+const sdbus::ServiceName ANCS_NOTIFICATIONS_SNAME = sdbus::ServiceName{ "org.freedesktop.Notifications" };
+const sdbus::InterfaceName ANCS_NOTIFICATIONS_IFACE = sdbus::InterfaceName{ "org.freedesktop.Notifications" };
+const sdbus::SignalName ANCS_NOTIFICATIONS_SIGNAL = sdbus::SignalName{ "ActionInvoked" };
+const sdbus::MethodName ANCS_NOTIFICATIONS_METHOD = sdbus::MethodName{ "Notify" };
+
+
 const std::string PHONE_ADDRESS = "B4:56:E3:B8:76:DA";
 
 const std::string AMS_UUID = "89d3502b-0f36-433a-8ef4-c502ad55f8dc";

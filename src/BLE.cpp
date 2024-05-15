@@ -84,7 +84,7 @@ void ancs_notify_callback(SimpleBLE::ByteArray payload)  {
     ancs_notif_src.CategoryID = i[2]; //unused here
     ancs_notif_src.CategoryCount = i[3]; //unused here
     ancs_notif_src.NotificationUID = { i[4], i[5], i[6], i[7] };
-    ancs_notif_src.NotificationUIDDec = (i[4] << 24) | (i[5] << 16) | (i[6] << 8) | i[7];
+    ancs_notif_src.NotificationUIDDec = (i[7] << 24) | (i[6] << 16) | (i[5] << 8) | i[4];
 
     std::bitset<32> x(ancs_notif_src.NotificationUIDDec);
 
@@ -97,12 +97,33 @@ void ancs_notify_callback(SimpleBLE::ByteArray payload)  {
 }
 
 void ancs_data_callback(SimpleBLE::ByteArray payload) {
-    int i[payload.size()];
+    std::vector<uint8_t> i(payload.size());
     for (int byte = 0; byte < payload.size(); byte++) {
-        i[byte] = (int)payload[byte];
-        std::cout << i[byte] << " ";
+        i[byte] = (uint8_t)payload[byte];
+        // std::cout << i[byte] << " ";
     }
     std::cout << std::endl;
+    std::cout << std::to_string(i[0]) << std::endl;
+    // if (i[0] == 0x00)  {
+        g_pANCSServer->processNotification(i);
+    // }
+    // if (i[0] == 0x01) {
+    //     std::cout << "recived app" << std::endl;
+    //     std::string application_name;
+    //     std::string display_name;
+    //     int loc = 1;
+    //     while (i[loc] != 0x00) {
+    //         application_name += i[loc++];
+    //     }
+    //     loc += 3;
+    //     while (loc < i.size()) {
+    //         display_name += i[loc++];
+    //     }
+    //     std::cout << "Application Name: " << application_name << std::endl;
+    //     std::cout << "Display Name: " << display_name << std::endl;
+    //     g_pANCSServer->application_index[application_name] = display_name;
+    //     // g_pANCSServer->application_name_pause = false;
+    // }
 }
 
 
@@ -124,8 +145,8 @@ void start_ancs(SimpleBLE::Peripheral phone) {
     std::this_thread::sleep_for(std::chrono::microseconds(400));
 
     try{
-        phone.notify(ANCS_UUID, ANCS_NOTIF_SRC_UUID, ancs_notify_callback);
-        phone.notify(ANCS_UUID, ANCS_DATA_SRC_UUID, ancs_data_callback);
+        phone.notify(ANCS_UUID, ANCS_NOTIF_SRC_UUID, &ancs_notify_callback);
+        phone.notify(ANCS_UUID, ANCS_DATA_SRC_UUID, &ancs_data_callback);
     }
     catch (std::exception& e) {
         std::cout << "Exception: " << e.what() << std::endl;
@@ -197,7 +218,7 @@ void CBLE::init() {
 
     if (connect_was_successful) {
         std::cout << "Starting -AMS-/ANCS" << std::endl;
-        // start_ams(phone);
+        start_ams(phone);
         start_ancs(phone);
     }
 
@@ -214,7 +235,7 @@ void CBLE::init() {
             connect_was_successful = phone.connect();
             if (connect_was_successful) {
                 std::cout << "Starting -AMS-/ANCS" << std::endl;
-                // start_ams(phone);
+                start_ams(phone);
                 start_ancs(phone);
             }
         }
@@ -271,6 +292,35 @@ int CBLE::sendNotification(ANCS_NOTIF_SRC_ATTR ancs_notif_src, std::vector<uint8
         data.push_back(static_cast<char>(i));
     }
     
+    connection.write_request(ANCS_UUID, ANCS_CTRL_PT_UUID, data);
+
+    return 1;
+}
+
+int CBLE::sendApplicationName(std::string application_name) {
+    if (g_pANCSServer->application_index.find(application_name) != g_pANCSServer->application_index.end())  {
+        return 1;
+    }
+    SimpleBLE::ByteArray data = { 0x01};
+
+    for (auto i : application_name) {
+        data.push_back(i);
+    }
+    data.push_back(0x00);
+    data.push_back(0x00);
+
+    connection.write_request(ANCS_UUID, ANCS_CTRL_PT_UUID, data);
+
+    return 1;
+}
+
+
+
+int CBLE::sendNotificationAction(std::vector<int> NotificationUID, int8_t action) {
+    SimpleBLE::ByteArray data = { 0x02, static_cast<char>(NotificationUID[0]), static_cast<char>(NotificationUID[1]), static_cast<char>(NotificationUID[2]), static_cast<char>(NotificationUID[3]), action};
+
+    data.push_back(static_cast<char>(action));
+
     connection.write_request(ANCS_UUID, ANCS_CTRL_PT_UUID, data);
 
     return 1;

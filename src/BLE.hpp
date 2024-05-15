@@ -12,6 +12,8 @@ public:
     std::string transferData(std::string);
     int sendCommand(int);
     int sendNotification(ANCS_NOTIF_SRC_ATTR, std::vector<uint8_t>);
+    int sendApplicationName(std::string);
+    int sendNotificationAction(std::vector<int>, int8_t);
     void disconnectThread();
 
     SimpleBLE::Peripheral connection;
