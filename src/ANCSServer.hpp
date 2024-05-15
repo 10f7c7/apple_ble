@@ -44,6 +44,7 @@ public:
     std::vector<std::variant<std::string, uint32_t>> decodeNotification(std::vector<uint8_t>);
     void processNotification(std::vector<uint8_t>);
     void write_notification(std::vector<std::variant<std::string, uint32_t>>);
+    void notification_action(sdbus::Signal);
     std::vector<uint8_t> overflow;
     std::map<uint32_t, uint8_t> notification_index;
     std::map<uint32_t, uint32_t> notification_serverid_index;

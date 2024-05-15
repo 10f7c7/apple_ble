@@ -24,7 +24,8 @@ std::string CANCSServer::transferData(ANCS_NOTIF_SRC_ATTR ancs_notif_src) {
         auto method = proxy->createMethodCall(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_CLOSE_METHOD);
         method << (uint32_t)notification_serverid_index[ancs_notif_src.NotificationUIDDec];
         proxy->callMethod(method);
-
+        notification_serverid_index.erase(ancs_notif_src.NotificationUIDDec);
+        notification_index.erase(ancs_notif_src.NotificationUIDDec);
         return "";
     }
     bool preexist = ancs_notif_src.EventFlags & (1 << NOTIF_FLAG::PREEXISTING);
@@ -277,7 +278,7 @@ std::vector<std::string> split(std::string str, std::string delimiter) {
     return v;
 }
 
-void notification_action(sdbus::Signal signal) {
+void CANCSServer::notification_action(sdbus::Signal signal) {
     uint32_t id;
     std::string action;
 
@@ -299,6 +300,7 @@ void notification_action(sdbus::Signal signal) {
     }
 
     std::cout << std::to_string(raw_data.at(0)) << " " << std::to_string(raw_data.at(1)) << " " << std::to_string(raw_data.at(2)) << " " << std::to_string(raw_data.at(3)) << std::endl;
+    notification_index.erase(stoiid);
     g_pBLE->sendNotificationAction(raw_data, std::stoi(data.at(1)));
 
 }
@@ -309,14 +311,13 @@ void CANCSServer::init() {
 
     proxy = sdbus::createProxy(ANCS_NOTIFICATIONS_SNAME, ANCS_NOTIFICATIONS_OPATH);
 
-    proxy->registerSignalHandler(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_SIGNAL, &notification_action);
-
+    proxy->registerSignalHandler(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_SIGNAL, [this](sdbus::Signal signal) {
+        notification_action(signal);
+    });
 
     while (ancs_server_async_thread_active) {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
-
-
 }
 
 void CANCSServer::disconnectThread() {
