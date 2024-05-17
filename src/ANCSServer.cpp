@@ -48,6 +48,8 @@ std::string CANCSServer::transferData(ANCS_NOTIF_SRC_ATTR ancs_notif_src) {
 void CANCSServer::write_notification(std::vector<std::variant<std::string, uint32_t>> attr) {
     std::vector<std::string> action;
 
+    bool sendQuiet = false;
+
     if (notification_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] & (1 << ANCS_EVENT_FLAGS::PositiveAction)) {
         std::cout << "POSITIVE_ACTION" << std::endl;
         action.insert(action.end(), "10f7c7 0 " + std::to_string((int)std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))));
@@ -57,6 +59,10 @@ void CANCSServer::write_notification(std::vector<std::variant<std::string, uint3
         std::cout << "NEGATIVE_ACTION" << std::endl;
         action.insert(action.end(), "10f7c7 1 " + std::to_string((int)std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))));
         action.insert(action.end(), std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::NegativeActionLabel)));
+    }
+
+    if (notification_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] & (1 << ANCS_EVENT_FLAGS::PreExisting)) {
+        sendQuiet = true;
     }
 
     std::string appli_name;
@@ -101,7 +107,7 @@ void CANCSServer::write_notification(std::vector<std::variant<std::string, uint3
     }
 
     auto method = proxy->createMethodCall(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_NOTIFY_METHOD);
-    method << appli_name << (uint32_t)0 << filename << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Title)) << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Message)) << action << std::map<std::string, std::variant<int>>{{"urgency", 1}, { "ancs", true }} << 10000;
+    method << appli_name << (uint32_t)0 << filename << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Title)) << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Message)) << action << std::map<std::string, std::variant<int32_t, bool>>{{"urgency", 1}, { "ancs", true }, { "swaync_send_quiet", sendQuiet }} << 10000;
     auto reply = proxy->callMethod(method);
     uint32_t result;
     reply >> result;
