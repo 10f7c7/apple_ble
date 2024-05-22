@@ -298,6 +298,7 @@ int CBLE::sendNotification(ANCS_NOTIF_SRC_ATTR ancs_notif_src, std::vector<uint8
 }
 
 int CBLE::sendApplicationName(std::string application_name) {
+    std::cout << "sendApplicationName: " << application_name << std::endl << std::endl;
     if (g_pANCSServer->application_index.find(application_name) != g_pANCSServer->application_index.end())  {
         return 1;
     }

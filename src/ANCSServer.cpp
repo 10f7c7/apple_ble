@@ -86,7 +86,9 @@ void CANCSServer::write_notification(std::vector<std::variant<std::string, uint3
 
         if (obj.at("resultCount") == 0) {
             std::cout << "No results" << std::endl;
-            appli_name = "rats";
+            // appli_name = "rats";
+            std::ofstream fd(filename, std::ios::binary);
+            fd.close();
         }
         else {
             std::string url = obj.at("results").at(0).at("artworkUrl100").get<std::string>();
@@ -98,7 +100,7 @@ void CANCSServer::write_notification(std::vector<std::variant<std::string, uint3
             std::cout << urlBase << std::endl;
             httplib::Client cli2("http://" + url_new.substr(0, found2));
             auto res2 = cli2.Get(obj.at("results").at(0).at("artworkUrl100").get<std::string>().erase(0, urlBase.size()));
-            std::ofstream fd("/home/10f7c7/Projects/apple_ble/app_icons/" + appli_name + ".jpg", std::ios::binary);
+            std::ofstream fd(filename, std::ios::binary);
             fd << res2->body;
             fd.close();
 
@@ -147,13 +149,15 @@ void CANCSServer::processNotification(std::vector<uint8_t> data)  {
     }
 
     if (attr.size() < 4) {
+        std::cout << "processApp" << std::endl;
+
         std::string display_name = "Rats";
-        if (std::get<std::string>(attr.at(0)) != " ") {
+        if (!std::get<std::string>(attr.at(0)).empty()) {
             display_name = std::get<std::string>(attr.at(0));
         }
         application_index.insert({ std::get<std::string>(attr.at(1)), display_name });
         std::cout << "application_index: " << std::get<std::string>(attr.at(1)) << std::endl;
-        std::cout << "display_name: " << std::get<std::string>(attr.at(0)) << std::endl;
+        std::cout << "display_name: " << std::get<std::string>(attr.at(0)) << std::endl << std::endl;
         std::vector<std::vector<std::variant<std::string, uint32_t>>> temp;
         for (int i = 0; i < nameless_notification_index.size(); i++)  {
             if (std::get<std::string>(nameless_notification_index.at(i).at(ANCS_NOTIF_ATTR::AppIdentifier)) == std::get<std::string>(attr.at(1))) {
