@@ -107,10 +107,28 @@ void CANCSServer::write_notification(std::vector<std::variant<std::string, uint3
         }
 
     }
+    std::tm tm{};
+
+    tm.tm_year = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(0, 4)) - 1900;
+    tm.tm_mon = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(4, 2)) - 1;
+    tm.tm_mday = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(6, 2));
+    tm.tm_hour = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(9, 2));
+    tm.tm_min = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(11, 2));
+    tm.tm_sec = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(13, 2));
+    tm.tm_isdst = 1;
+
+    std::time_t t = std::mktime(&tm);
+
+    std::cout << "time: " << std::to_string(t) << std::endl;
+    char timeString[std::size("yyyy-mm-ddThh:mm:ssZ")];
+    std::strftime(std::data(timeString), std::size(timeString),
+        "%FT%TZ", std::gmtime(&t));
+    std::cout << timeString << '\n';
+
 
     auto method = proxy->createMethodCall(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_NOTIFY_METHOD);
     std::cout << (notification_serverid_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))]) << std::endl;
-    method << appli_name << (uint32_t)(notification_serverid_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] | 0) << filename << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Title)) << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Message)) << action << std::map<std::string, std::variant<int32_t, bool>>{{"urgency", 1}, { "ancs", true }, { "swaync_send_quiet", sendQuiet }} << 10000;
+    method << appli_name << (uint32_t)(notification_serverid_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] | 0) << filename << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Title)) << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Message)) << action << std::map<std::string, std::variant<int32_t, bool, std::time_t>>{{"urgency", 1}, { "ancs", true }, { "swaync_send_quiet", sendQuiet }, { "time", t }} << 10000;
     auto reply = proxy->callMethod(method);
     uint32_t result;
     reply >> result;
