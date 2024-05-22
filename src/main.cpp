@@ -32,8 +32,9 @@ int main()  {
 
     g_pANCSServer = std::make_unique<CANCSServer>();
     std::thread* ancs_server_async_thread = new std::thread(&CANCSServer::init, g_pANCSServer.get());
-    g_pAMSServer = std::make_unique<CAMSServer>();
-    std::thread* ams_server_async_thread = new std::thread(&CAMSServer::init, g_pAMSServer.get());
+    
+    // g_pAMSServer = std::make_unique<CAMSServer>();
+    // std::thread* ams_server_async_thread = new std::thread(&CAMSServer::init, g_pAMSServer.get());
 
     std::cout << "started" << std::endl;
 
@@ -46,12 +47,12 @@ int main()  {
     }
     ble_async_thread->join();
     delete ble_async_thread;
-    
-    while (!ams_server_async_thread->joinable()) {
-        millisecond_delay(10);
-    }
-    ams_server_async_thread->join();
-    delete ams_server_async_thread;
+
+    // while (!ams_server_async_thread->joinable()) {
+    //     millisecond_delay(10);
+    // }
+    // ams_server_async_thread->join();
+    // delete ams_server_async_thread;
 
     while (!ancs_server_async_thread->joinable()) {
         millisecond_delay(10);

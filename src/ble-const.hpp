@@ -13,6 +13,7 @@ const sdbus::InterfaceName ANCS_NOTIFICATIONS_IFACE = sdbus::InterfaceName{ "org
 const sdbus::SignalName ANCS_NOTIFICATIONS_SIGNAL = sdbus::SignalName{ "ActionInvoked" };
 const sdbus::MethodName ANCS_NOTIFICATIONS_NOTIFY_METHOD = sdbus::MethodName{ "Notify" };
 const sdbus::MethodName ANCS_NOTIFICATIONS_CLOSE_METHOD = sdbus::MethodName{ "CloseNotification" };
+const sdbus::MethodName ANCS_NOTIFICATIONS_CLOSEALL_METHOD = sdbus::MethodName{ "CloseAllNotifications" };
 
 
 const std::string PHONE_ADDRESS = "B4:56:E3:B8:76:DA";

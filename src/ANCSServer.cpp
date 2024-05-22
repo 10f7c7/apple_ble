@@ -107,12 +107,14 @@ void CANCSServer::write_notification(std::vector<std::variant<std::string, uint3
     }
 
     auto method = proxy->createMethodCall(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_NOTIFY_METHOD);
-    method << appli_name << (uint32_t)0 << filename << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Title)) << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Message)) << action << std::map<std::string, std::variant<int32_t, bool>>{{"urgency", 1}, { "ancs", true }, { "swaync_send_quiet", sendQuiet }} << 10000;
+    std::cout << (notification_serverid_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))]) << std::endl;
+    method << appli_name << (uint32_t)(notification_serverid_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] | 0) << filename << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Title)) << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Message)) << action << std::map<std::string, std::variant<int32_t, bool>>{{"urgency", 1}, { "ancs", true }, { "swaync_send_quiet", sendQuiet }} << 10000;
     auto reply = proxy->callMethod(method);
     uint32_t result;
     reply >> result;
-    notification_serverid_index.insert({ std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID)), result });
-    std::cout << "reply: " << std::to_string(result) << std::endl;
+    // notification_serverid_index.insert({ std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID)), result });
+    notification_serverid_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] = result;
+    std::cout << "reply: " << std::to_string(result) << " index : " << notification_serverid_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] << std::endl;
 
 }
 

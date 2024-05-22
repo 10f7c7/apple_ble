@@ -83,12 +83,12 @@ void ancs_notify_callback(SimpleBLE::ByteArray payload)  {
     ancs_notif_src.EventFlags = i[1];
     ancs_notif_src.CategoryID = i[2]; //unused here
     ancs_notif_src.CategoryCount = i[3]; //unused here
-    ancs_notif_src.NotificationUID = { i[4], i[5], i[6], i[7] };
-    ancs_notif_src.NotificationUIDDec = (i[7] << 24) | (i[6] << 16) | (i[5] << 8) | i[4];
+    ancs_notif_src.NotificationUIDvec = { i[4], i[5], i[6], i[7] };
+    ancs_notif_src.NotificationUID = (i[7] << 24) | (i[6] << 16) | (i[5] << 8) | i[4];
 
-    std::bitset<32> x(ancs_notif_src.NotificationUIDDec);
+    std::bitset<32> x(ancs_notif_src.NotificationUID);
 
-    std::cout << "EventID: " << ancs_notif_src.NotificationUID[0] << ", " << ancs_notif_src.NotificationUID[1] << ", " << ancs_notif_src.NotificationUID[2] << ", " << ancs_notif_src.NotificationUID[3] << std::endl;
+    std::cout << "EventID: " << ancs_notif_src.NotificationUIDvec[0] << ", " << ancs_notif_src.NotificationUIDvec[1] << ", " << ancs_notif_src.NotificationUIDvec[2] << ", " << ancs_notif_src.NotificationUIDvec[3] << std::endl;
     std::cout << "EventID: " << x << std::endl;
 
     g_pANCSServer->transferData(std::move(ancs_notif_src));
@@ -218,7 +218,7 @@ void CBLE::init() {
 
     if (connect_was_successful) {
         std::cout << "Starting -AMS-/ANCS" << std::endl;
-        start_ams(phone);
+        // start_ams(phone);
         start_ancs(phone);
     }
 
@@ -235,7 +235,7 @@ void CBLE::init() {
             connect_was_successful = phone.connect();
             if (connect_was_successful) {
                 std::cout << "Starting -AMS-/ANCS" << std::endl;
-                start_ams(phone);
+                // start_ams(phone);
                 start_ancs(phone);
             }
         }
@@ -278,7 +278,7 @@ int CBLE::sendCommand(int command) {
 
 int CBLE::sendNotification(ANCS_NOTIF_SRC_ATTR ancs_notif_src, std::vector<uint8_t> actions) {
     
-    SimpleBLE::ByteArray data = { 0x00, static_cast<char>(ancs_notif_src.NotificationUID[0]), static_cast<char>(ancs_notif_src.NotificationUID[1]), static_cast<char>(ancs_notif_src.NotificationUID[2]), static_cast<char>(ancs_notif_src.NotificationUID[3]), (0x00), (0x01), static_cast<int8_t>(0xff), static_cast<int8_t>(0xff), (0x02), static_cast<int8_t>(0xff), static_cast<int8_t>(0xff), (0x03), static_cast<int8_t>(0xff), static_cast<int8_t>(0xff), (0x04), (0x05) };
+    SimpleBLE::ByteArray data = { 0x00, static_cast<char>(ancs_notif_src.NotificationUIDvec[0]), static_cast<char>(ancs_notif_src.NotificationUIDvec[1]), static_cast<char>(ancs_notif_src.NotificationUIDvec[2]), static_cast<char>(ancs_notif_src.NotificationUIDvec[3]), (0x00), (0x01), static_cast<int8_t>(0xff), static_cast<int8_t>(0xff), (0x02), static_cast<int8_t>(0xff), static_cast<int8_t>(0xff), (0x03), static_cast<int8_t>(0xff), static_cast<int8_t>(0xff), (0x04), (0x05) };
 
     // for (auto i : data) {
     //     // str += static_cast<char>(i);
