@@ -15,6 +15,7 @@
 #include <atomic>
 #include <algorithm>
 #include <ctime>
+#include "../include/tz.h"
 #include "Player.hpp"
 #include "ble-const.hpp"
 
@@ -62,6 +63,8 @@ public:
     std::vector<std::vector<std::variant<std::string, uint32_t>>> nameless_notification_index;
     std::map<std::string, std::string> application_index;
     std::unique_ptr<sdbus::IProxy> proxy;
+
+    bool isDST = false;
 
 private:
     std::thread* ancs_server_async_thread;

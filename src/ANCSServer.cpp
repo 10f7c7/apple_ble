@@ -115,16 +115,9 @@ void CANCSServer::write_notification(std::vector<std::variant<std::string, uint3
     tm.tm_hour = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(9, 2));
     tm.tm_min = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(11, 2));
     tm.tm_sec = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(13, 2));
-    tm.tm_isdst = 1;
+    tm.tm_isdst = CANCSServer::isDST;
 
     std::time_t t = std::mktime(&tm);
-
-    std::cout << "time: " << std::to_string(t) << std::endl;
-    char timeString[std::size("yyyy-mm-ddThh:mm:ssZ")];
-    std::strftime(std::data(timeString), std::size(timeString),
-        "%FT%TZ", std::gmtime(&t));
-    std::cout << timeString << '\n';
-
 
     auto method = proxy->createMethodCall(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_NOTIFY_METHOD);
     std::cout << (notification_serverid_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))]) << std::endl;
@@ -336,6 +329,9 @@ void CANCSServer::notification_action(sdbus::Signal signal) {
 
 
 void CANCSServer::init() {
+
+    CANCSServer::isDST = date::current_zone()->get_info(std::chrono::system_clock::now()).save.count();
+
     std::thread* ancs_server_async_thread = new std::thread(ancs_server_async_thread_function);
 
     proxy = sdbus::createProxy(ANCS_NOTIFICATIONS_SNAME, ANCS_NOTIFICATIONS_OPATH);
