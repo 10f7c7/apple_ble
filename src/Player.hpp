@@ -101,14 +101,20 @@ protected:
     }
 
     double Volume() override {
-        std::cout << "volume" << std::endl;
+        std::cout << "volume get" << std::endl;
         return m_Volume;
     }
 
     void Volume(const double& value) override {
-        std::cout << "volume" << std::endl;
+        std::cout << "volume set" << std::endl;
+        if (value < m_Volume)  {
+            g_pBLE->sendCommand(0x06);
+        } else if (value > m_Volume) {
+            g_pBLE->sendCommand(0x05);
+        }
         m_Volume = value;
         Properties_adaptor::emitPropertiesChangedSignal(sdbus::InterfaceName{ Player_adaptor::INTERFACE_NAME }, { sdbus::PropertyName{"Volume"} });
+        return;
     }
 
     int64_t Position() override {
@@ -216,6 +222,13 @@ public:
     void updateElapsedTime(const int64_t time) {
         m_Position = time;
         Properties_adaptor::emitPropertiesChangedSignal(sdbus::InterfaceName{ Player_adaptor::INTERFACE_NAME }, { sdbus::PropertyName{"Position"} });
+    }
+
+    void updateVolume(const double volume) {
+        m_Volume = volume;
+        std::cout << "volume update" << std::endl;
+        Properties_adaptor::emitPropertiesChangedSignal(sdbus::InterfaceName{ Player_adaptor::INTERFACE_NAME }, { sdbus::PropertyName{"Volume"} });
+        return;
     }
 };
 

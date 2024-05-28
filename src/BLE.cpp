@@ -206,7 +206,14 @@ void CBLE::init() {
 
     auto phone = peripherals[0];
 
-    bool connect_was_successful = phone.connect();
+    bool connect_was_successful;
+
+    phone.set_callback_on_disconnected([&]() {
+        std::cout << "Disconnected from " << phone.identifier().value_or("UNKNOWN") << " [" << phone.address().value_or("UNKNOWN") << "]" << std::endl;
+        connect_was_successful = 0;
+    });
+
+    connect_was_successful = phone.connect();
 
     while (!connect_was_successful) {
         std::cout << "Failed to connect to " << phone.identifier().value_or("UNKNOWN") << " ["
@@ -218,7 +225,7 @@ void CBLE::init() {
 
     if (connect_was_successful) {
         std::cout << "Starting -AMS-/ANCS" << std::endl;
-        // start_ams(phone);
+        start_ams(phone);
         start_ancs(phone);
     }
 
@@ -227,7 +234,7 @@ void CBLE::init() {
 
     while (ble_async_thread_active) {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
-        while (!connection.is_connected()) {
+        while (!connect_was_successful) {
             std::cout << "Failed to connect to " << phone.identifier().value_or("UNKNOWN") << " ["
                 << phone.address().value_or("UNKNOWN") << "]" << std::endl;
             std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -235,7 +242,7 @@ void CBLE::init() {
             connect_was_successful = phone.connect();
             if (connect_was_successful) {
                 std::cout << "Starting -AMS-/ANCS" << std::endl;
-                // start_ams(phone);
+                start_ams(phone);
                 start_ancs(phone);
             }
         }

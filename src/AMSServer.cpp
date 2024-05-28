@@ -130,7 +130,8 @@ std::string CAMSServer::transferData(int id, std::string data) {
             g_pPlayer->updateElapsedTime(ElapsedTimeFloat);
 
         } else if (id == 0x02) {
-
+            double Volume = std::stod(data);
+            g_pPlayer->updateVolume(Volume);
         }
     }
 
