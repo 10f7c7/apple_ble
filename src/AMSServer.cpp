@@ -177,6 +177,11 @@ std::string CAMSServer::transferData(int id, std::string data) {
                     }
                 } else {
                     std::cout << "No results" << std::endl;
+                    std::ofstream fd("/home/10f7c7/Projects/apple_ble/album_icons/" + replace_all(data, " ", "+"), std::ios::binary);
+                    std::ifstream fd2("/home/10f7c7/Images/funntcat.jpg", std::ios::binary);
+                    fd << fd2.rdbuf();
+                    fd.close();
+                    fd2.close();
                 }
 
             }
