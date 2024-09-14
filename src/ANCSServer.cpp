@@ -134,6 +134,10 @@ void CANCSServer::write_notification(std::vector<std::variant<std::string, uint3
 void CANCSServer::processNotification(std::vector<uint8_t> data)  {
     std::cout << "processNotification" << std::endl;
     std::vector<std::variant<std::string, uint32_t>> attr = decodeNotification(data);
+    if (overflow.size() > 0) {
+        std::cout << "overflow" << std::endl;
+        return;
+    }
 
     if (attr.size() > 3) {
         std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)) << std::endl;
@@ -185,7 +189,7 @@ void CANCSServer::processNotification(std::vector<uint8_t> data)  {
 std::vector<std::variant<std::string, uint32_t>> CANCSServer::decodeNotification(std::vector<uint8_t> incomedata) {
     std::vector<uint8_t> data = incomedata;
     std::cout << "decodeNotification" << std::endl;
-    if (overflow.size() < 0) {
+    if (overflow.size() > 0) {
         data.insert(data.begin(), overflow.begin(), overflow.end());
     }
     bool of = false;
@@ -262,6 +266,9 @@ std::vector<std::variant<std::string, uint32_t>> CANCSServer::decodeNotification
         of = true;
         std::cout << "Overflow but to hurt you" << std::endl;
         overflow.insert(incomedata.begin(), overflow.begin(), overflow.end());
+    }
+    if (of)  {
+        std::cout << "of" << std::endl;
     }
     if ((overflow.size() > 0) && !of) {
         std::cout << "Overflow over" << std::endl;

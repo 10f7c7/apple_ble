@@ -30,8 +30,8 @@ int main()  {
     std::thread* ble_async_thread = new std::thread(&CBLE::init, g_pBLE.get());
 
 
-    g_pANCSServer = std::make_unique<CANCSServer>();
-    std::thread* ancs_server_async_thread = new std::thread(&CANCSServer::init, g_pANCSServer.get());
+    // g_pANCSServer = std::make_unique<CANCSServer>();
+    // std::thread* ancs_server_async_thread = new std::thread(&CANCSServer::init, g_pANCSServer.get());
     
     g_pAMSServer = std::make_unique<CAMSServer>();
     std::thread* ams_server_async_thread = new std::thread(&CAMSServer::init, g_pAMSServer.get());
@@ -54,11 +54,11 @@ int main()  {
     ams_server_async_thread->join();
     delete ams_server_async_thread;
 
-    while (!ancs_server_async_thread->joinable()) {
-        millisecond_delay(10);
-    }
-    ancs_server_async_thread->join();
-    delete ancs_server_async_thread;
+    // while (!ancs_server_async_thread->joinable()) {
+    //     millisecond_delay(10);
+    // }
+    // ancs_server_async_thread->join();
+    // delete ancs_server_async_thread;
 
     std::cout << "done" << std::endl;
     // g_pBLE->disconnect();

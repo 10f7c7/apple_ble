@@ -16,7 +16,8 @@ const sdbus::MethodName ANCS_NOTIFICATIONS_CLOSE_METHOD = sdbus::MethodName{ "Cl
 const sdbus::MethodName ANCS_NOTIFICATIONS_CLOSEALL_METHOD = sdbus::MethodName{ "CloseAllNotifications" };
 
 
-const std::string PHONE_ADDRESS = "B4:56:E3:B8:76:DA";
+// const std::string PHONE_ADDRESS = "44:2E:EF:D3:69:F5";
+const std::string PHONE_ADDRESS = "F4:39:A6:1D:CE:D7";
 
 const std::string AMS_UUID = "89d3502b-0f36-433a-8ef4-c502ad55f8dc";
 const std::string AMS_REMOTE_COMMAND_UUID = "9b3c81d8-57b1-4a8a-b8df-0e56f7ca51c2";

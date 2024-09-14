@@ -64,7 +64,7 @@ public:
     std::map<std::string, std::string> application_index;
     std::unique_ptr<sdbus::IProxy> proxy;
 
-    bool isDST = false;
+    bool isDST = true;
 
 private:
     std::thread* ancs_server_async_thread;

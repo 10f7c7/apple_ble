@@ -36,35 +36,17 @@ void ble_millisecond_delay(int ms) {
 
 
 void ams_notify_callback(SimpleBLE::ByteArray payload) {
-    // for (auto byte : payload) {
-    //     std::cout << "(" <<  byte << ": ";
-    //     std::cout << "" <<  (int)byte << ") ";
-    //     std::cout << std::hex << (int)byte << " ";
-    // }
     int i[payload.size()];
     for (int byte = 0; byte < payload.size(); byte++) {
         i[byte] = (int)payload[byte];
     }
-
-    // std::cout << payload.substr(3, payload.size()-3) << std::endl;
-    // std::cout << std::endl;
-    // int value;
-    // std::memcpy(&value, static_cast<const void*>(payload.data()), sizeof(int));
-    // std::cout << value << std::endl;
 
     ams_entity.EntityID = i[0];
     ams_entity.AttributeID = i[1];
     ams_entity.EntityUpdateFlags = i[2];
     ams_entity.Value = payload.substr(3, payload.size()-3);
 
-    // std::cout << "EntityID: " << (int)ams_entity.EntityID << std::endl;
-    // std::cout << "AttributeID: " << (int)ams_entity.AttributeID << std::endl;
-    // std::cout << "EntityUpdateFlags: " << (int)ams_entity.EntityUpdateFlags << std::endl;
-    // std::cout << "Value: " << ams_entity.Value << std::endl << std::endl << std::endl;
-
     int data = (std::bitset<8>(ams_entity.EntityID).to_ulong() << 4) | std::bitset<8>(ams_entity.AttributeID).to_ulong();
-
-    // std::cout << std::hex << data << std::endl;
 
     g_pAMSServer->transferData(data, ams_entity.Value);
 }
@@ -224,9 +206,9 @@ void CBLE::init() {
     }
 
     if (connect_was_successful) {
-        std::cout << "Starting -AMS-/ANCS" << std::endl;
+        std::cout << "Starting AMS/-ANCS-" << std::endl;
         start_ams(phone);
-        start_ancs(phone);
+        // start_ancs(phone);
     }
 
     connection = phone;
@@ -241,9 +223,9 @@ void CBLE::init() {
             std::cout << "Retrying..." << std::endl;
             connect_was_successful = phone.connect();
             if (connect_was_successful) {
-                std::cout << "Starting -AMS-/ANCS" << std::endl;
+                std::cout << "Starting AMS/-ANCS-" << std::endl;
                 start_ams(phone);
-                start_ancs(phone);
+                // start_ancs(phone);
             }
         }
     }
