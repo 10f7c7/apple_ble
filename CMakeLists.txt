@@ -17,8 +17,8 @@ find_package(nlohmann_json 3.2.0 REQUIRED)
 # find_package(simplebluez REQUIRED CONFIG)
 
 file(GLOB_RECURSE SRCFILES CONFIGURE_DEPENDS "src/*.cpp")
-add_executable(ams_mpris ${SRCFILES})
-target_link_libraries(ams_mpris PUBLIC rt simpleble::simpleble PRIVATE nlohmann_json::nlohmann_json SDBusCpp::sdbus-c++ curl)
+add_executable(apple_ble ${SRCFILES})
+target_link_libraries(apple_ble PUBLIC rt simpleble::simpleble PRIVATE nlohmann_json::nlohmann_json SDBusCpp::sdbus-c++ curl)
 
 # add_executable(server src/server.cpp)
 # target_link_libraries(server sdbus-c++)
