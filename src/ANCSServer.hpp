@@ -1,27 +1,27 @@
 #pragma once
 
-#include <vector>
-#include <memory>
-#include <tuple>
-#include <variant>
-#include <string>
-#include <iostream>
-#include <sdbus-c++/sdbus-c++.h>
-#include <filesystem>
-#include <httplib.h>
-#include <nlohmann/json.hpp>
-#include <thread>
-#include <chrono>
-#include <atomic>
-#include <algorithm>
-#include <ctime>
 #include "../include/tz.h"
 #include "Player.hpp"
 #include "ble-const.hpp"
-
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <ctime>
+#include <filesystem>
+#include <fstream>
+#include <httplib.h>
+#include <iostream>
+#include <memory>
+#include <nlohmann/json.hpp>
+#include <sdbus-c++/sdbus-c++.h>
+#include <string>
+#include <thread>
+#include <tuple>
+#include <variant>
+#include <vector>
 
 class CANCSServer {
-public:
+  public:
     void init();
     std::string transferData(ANCS_NOTIF_SRC_ATTR);
     void disconnectThread();
@@ -66,8 +66,8 @@ public:
 
     bool isDST = true;
 
-private:
-    std::thread* ancs_server_async_thread;
+  private:
+    std::thread *ancs_server_async_thread;
 };
 
 inline std::unique_ptr<CANCSServer> g_pANCSServer;

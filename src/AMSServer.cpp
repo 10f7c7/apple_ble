@@ -4,6 +4,7 @@
 #include <atomic>
 #include <chrono>
 #include <filesystem>
+#include <fstream>
 #include <httplib.h>
 #include <iostream>
 #include <memory>
@@ -17,220 +18,195 @@
 
 std::atomic_bool ams_server_async_thread_active = true;
 void ams_server_async_thread_function() {
-  while (ams_server_async_thread_active) {
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
-  }
+    while (ams_server_async_thread_active) {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
 }
 
 void ams_server_millisecond_delay(int ms) {
-  for (int i = 0; i < ms; i++) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+    for (int i = 0; i < ms; i++) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
 }
 
 void CAMSServer::init() {
-  // Create D-Bus connection to the system bus and requests name on it.
-  // const char* serviceName = "org.sdbuscpp.concatenator";
-  std::thread *ams_server_async_thread =
-      new std::thread(ams_server_async_thread_function);
+    // Create D-Bus connection to the system bus and requests name on it.
+    // const char* serviceName = "org.sdbuscpp.concatenator";
+    std::thread *ams_server_async_thread =
+        new std::thread(ams_server_async_thread_function);
 
-  connection = sdbus::createSessionBusConnection();
-  connection->requestName(AMS_MPRIS_BUS_NAME);
+    connection = sdbus::createSessionBusConnection();
+    connection->requestName(AMS_MPRIS_BUS_NAME);
 
-  // Create concatenator D-Bus object.
-  // const char* objectPath = "/org/sdbuscpp/concatenator";
-  // auto mpris_opath = sdbus::createObject(*connection, AMS_MPRIS_OPATH);
+    // Create concatenator D-Bus object.
+    // const char* objectPath = "/org/sdbuscpp/concatenator";
+    // auto mpris_opath = sdbus::createObject(*connection, AMS_MPRIS_OPATH);
 
-  connection->enterEventLoopAsync();
-  // Player player(*connection, AMS_MPRIS_OPATH);
-  g_pPlayer = std::make_unique<Player>(*connection, AMS_MPRIS_OPATH);
-  // MediaPlayer2 mediaplayer2(*connection, AMS_MPRIS_OPATH);
-  g_pMediaPlayer2 =
-      std::make_unique<MediaPlayer2>(*connection, AMS_MPRIS_OPATH);
+    connection->enterEventLoopAsync();
+    // Player player(*connection, AMS_MPRIS_OPATH);
+    g_pPlayer = std::make_unique<Player>(*connection, AMS_MPRIS_OPATH);
+    // MediaPlayer2 mediaplayer2(*connection, AMS_MPRIS_OPATH);
+    g_pMediaPlayer2 = std::make_unique<MediaPlayer2>(*connection, AMS_MPRIS_OPATH);
 
-  // Run the I/O event loop on the bus connection.
-  // while (!server_async_thread->joinable()) {
-  //     server_millisecond_delay(10);
-  // }
-  // server_async_thread->join();
-  // delete server_async_thread;
-  while (ams_server_async_thread_active) {
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
-  }
+    // Run the I/O event loop on the bus connection.
+    // while (!server_async_thread->joinable()) {
+    //     server_millisecond_delay(10);
+    // }
+    // server_async_thread->join();
+    // delete server_async_thread;
+    while (ams_server_async_thread_active) {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
 
-  // connection->releaseName(AMS_MPRIS_BUS_NAME);
-  // try{
-  // connection->leaveEventLoop();
-  // } catch (const std::exception& e) {
-  //     std::cerr << e.what() << std::endl;
-  // }
-  return;
+    // connection->releaseName(AMS_MPRIS_BUS_NAME);
+    // try{
+    // connection->leaveEventLoop();
+    // } catch (const std::exception& e) {
+    //     std::cerr << e.what() << std::endl;
+    // }
+    return;
 }
 
-std::string replace_all(std::string s, std::string const &toReplace,
-                        std::string const &replaceWith) {
-  std::string buf;
-  std::size_t pos = 0;
-  std::size_t prevPos;
+std::string replace_all(std::string s, std::string const &toReplace, std::string const &replaceWith) {
+    std::string buf;
+    std::size_t pos = 0;
+    std::size_t prevPos;
 
-  // Reserves rough estimate of final size of string.
-  buf.reserve(s.size());
+    // Reserves rough estimate of final size of string.
+    buf.reserve(s.size());
 
-  while (true) {
-    prevPos = pos;
-    pos = s.find(toReplace, pos);
-    if (pos == std::string::npos)
-      break;
-    buf.append(s, prevPos, pos - prevPos);
-    buf += replaceWith;
-    pos += toReplace.size();
-  }
+    while (true) {
+        prevPos = pos;
+        pos = s.find(toReplace, pos);
+        if (pos == std::string::npos)
+            break;
+        buf.append(s, prevPos, pos - prevPos);
+        buf += replaceWith;
+        pos += toReplace.size();
+    }
 
-  buf.append(s, prevPos, s.size() - prevPos);
-  s.swap(buf);
-  return s;
+    buf.append(s, prevPos, s.size() - prevPos);
+    s.swap(buf);
+    return s;
 }
 
 std::string CAMSServer::transferData(int id, std::string data) {
-  std::cout << "transferData: " << data << std::endl;
-  // g_pBLE->transferData("recived");
+    std::cout << "transferData: " << data << std::endl;
+    // g_pBLE->transferData("recived");
 
-  std::string key;
+    std::string key;
 
-  if ((id >> 4) == 0b0000) {
-    std::cout << "EntityIDPlayer" << std::endl;
-    if (id == 0x00) {
+    if ((id >> 4) == 0b0000) {
+        std::cout << "EntityIDPlayer" << std::endl;
+        if (id == 0x00) {
 
-    } else if (id == 0x01) {
-      std::tuple<int, float, float> dataTuple;
-      std::stringstream dataStr(data);
-      std::string PlaybackState, PlaybackRate, ElapsedTime;
+        } else if (id == 0x01) {
+            std::tuple<int, float, float> dataTuple;
+            std::stringstream dataStr(data);
+            std::string PlaybackState, PlaybackRate, ElapsedTime;
 
-      std::getline(dataStr, PlaybackState, ',');
-      std::getline(dataStr, PlaybackRate, ',');
-      std::getline(dataStr, ElapsedTime, ',');
+            std::getline(dataStr, PlaybackState, ',');
+            std::getline(dataStr, PlaybackRate, ',');
+            std::getline(dataStr, ElapsedTime, ',');
 
-      int PlaybackStateInt = std::move(stoi(PlaybackState));
-      float PlaybackRateFloat = std::move(stof(PlaybackRate));
-      int64_t ElapsedTimeFloat = std::move(stof(ElapsedTime) * 1000000);
+            int PlaybackStateInt = std::move(stoi(PlaybackState));
+            float PlaybackRateFloat = std::move(stof(PlaybackRate));
+            int64_t ElapsedTimeFloat = std::move(stof(ElapsedTime) * 1000000);
 
-      std::cout << "PlaybackState: " << stoi(PlaybackState) << std::endl;
-      std::string playbackStatus;
-      if (PlaybackStateInt == 0) {
-        playbackStatus = "Paused";
-      } else if (PlaybackStateInt == 1) {
-        playbackStatus = "Playing";
-      } else if (PlaybackStateInt == 2) {
-        playbackStatus = "Rewinding";
-      } else if (PlaybackStateInt == 3) {
-        playbackStatus = "FastForwarding";
-      }
-      std::cout << "playbackStatus: " << playbackStatus << std::endl;
-      g_pPlayer->updatePlaybackStatus(playbackStatus);
-      g_pPlayer->updatePlaybackRate(PlaybackRateFloat);
-      g_pPlayer->updateElapsedTime(ElapsedTimeFloat);
-
-    } else if (id == 0x02) {
-      double Volume = std::stod(data);
-      g_pPlayer->updateVolume(Volume);
-    }
-  }
-
-  if ((id >> 4) & 0b0010) {
-    std::cout << "EntityIDTrack" << std::endl;
-    if (id == 0x20) {
-      key = "xesam:artist";
-    } else if (id == 0x21) {
-      key = "xesam:album";
-      if (std::filesystem::exists(
-              CACHE_DIR + "/album_icons/" +
-              replace_all(data, " ", "+"))) {
-        std::cout << "File exists" << std::endl;
-        g_pPlayer->updateMetadata(
-            "mpris:artUrl",
-            "file://" + CACHE_DIR + "/album_icons/" +
-                replace_all(data, " ", "+"));
-      } else {
-        std::cout << "File does not exist" << std::endl;
-        g_pPlayer->updateMetadata("mpris:artUrl",
-                                  "file:///home/10f7c7/Pictures/0_0.jpg");
-
-        httplib::Client cli("https://itunes.apple.com");
-        std::string reqURL = "/search?media=music&entity=album&attribute=albumTerm&term=" + replace_all(data, " ", "+") + "+&limit=4";
-        auto res = cli.Get(reqURL);
-        nlohmann::json obj = nlohmann::json::parse(res->body);
-
-        if (obj.at("results").size() > 0) {
-          for (int i = 0; i < obj.at("results").size(); i++) {
-            nlohmann::json album = obj.at("results").at(i);
-            std::cout << album << std::endl;
-            if (album.at("artistName") ==
-                g_pPlayer->getMetadata("xesam:artist")) {
-              std::string url = album.at("artworkUrl100").get<std::string>();
-              std::cout << url << std::endl;
-              size_t found = url.find_first_of(":");
-              std::string url_new = url.substr(found + 3); // url excluding http
-              size_t found2 = url_new.find_first_of("/");
-              std::string urlBase = url.substr(0, found + 3) +
-                                    url_new.substr(0, found2); // baseurl
-              std::cout << urlBase << std::endl;
-              std::cout << album.at("artworkUrl100")
-                               .get<std::string>()
-                               .erase(0, urlBase.size())
-                        << std::endl;
-              httplib::Client cli2("https://" + url_new.substr(0, found2));
-              auto res2 = cli2.Get(album.at("artworkUrl100")
-                                       .get<std::string>()
-                                       .erase(0, urlBase.size()));
-              std::ofstream fd(CACHE_DIR + "/album_icons/" +
-                                   replace_all(data, " ", "+"),
-                               std::ios::binary);
-              fd << res2->body;
-              fd.close();
-              g_pPlayer->updateMetadata(
-                  "mpris:artUrl",
-                  "file://" + CACHE_DIR +"/album_icons/" +
-                      replace_all(data, " ", "+"));
-              break;
+            std::cout << "PlaybackState: " << stoi(PlaybackState) << std::endl;
+            std::string playbackStatus;
+            if (PlaybackStateInt == 0) {
+                playbackStatus = "Paused";
+            } else if (PlaybackStateInt == 1) {
+                playbackStatus = "Playing";
+            } else if (PlaybackStateInt == 2) {
+                playbackStatus = "Rewinding";
+            } else if (PlaybackStateInt == 3) {
+                playbackStatus = "FastForwarding";
             }
-          }
-        } else {
-          std::cout << "No results" << std::endl;
-          std::ofstream fd(CACHE_DIR + "/album_icons/" +
-                               replace_all(data, " ", "+"),
-                           std::ios::binary);
-          std::ifstream fd2("/home/10f7c7/Images/funntcat.jpg",
-                            std::ios::binary);
-          fd << fd2.rdbuf();
-          fd.close();
-          fd2.close();
+            std::cout << "playbackStatus: " << playbackStatus << std::endl;
+            g_pPlayer->updatePlaybackStatus(playbackStatus);
+            g_pPlayer->updatePlaybackRate(PlaybackRateFloat);
+            g_pPlayer->updateElapsedTime(ElapsedTimeFloat);
+
+        } else if (id == 0x02) {
+            double Volume = std::stod(data);
+            g_pPlayer->updateVolume(Volume);
         }
-      }
-
-    } else if (id == 0x22) {
-      key = "xesam:title";
-    } else if (id == 0x23) {
-      key = "mpris:length";
-      std::cout << data << std::endl;
-      data = std::to_string(std::stoi(data) * 1000000);
-      std::cout << data << std::endl;
     }
-    g_pPlayer->updateMetadata(key, data);
-  }
 
-  std::cout << std::endl;
+    if ((id >> 4) & 0b0010) {
+        std::cout << "EntityIDTrack" << std::endl;
+        if (id == 0x20) {
+            key = "xesam:artist";
+        } else if (id == 0x21) {
+            key = "xesam:album";
+            if (std::filesystem::exists(CACHE_DIR + "/album_icons/" + replace_all(data, " ", "+"))) {
+                std::cout << "File exists" << std::endl;
+                g_pPlayer->updateMetadata("mpris:artUrl", "file://" + CACHE_DIR + "/album_icons/" + replace_all(data, " ", "+"));
+            } else {
+                std::cout << "File does not exist" << std::endl;
+                g_pPlayer->updateMetadata("mpris:artUrl", "file:///home/10f7c7/Pictures/0_0.jpg");
+                httplib::Client cli("https://itunes.apple.com");
+                std::string reqURL = "/search?media=music&entity=album&attribute=albumTerm&term=" + replace_all(data, " ", "+") + "+&limit=4";
+                auto res = cli.Get(reqURL);
+                nlohmann::json obj = nlohmann::json::parse(res->body);
+                if (obj.at("results").size() > 0) {
+                    for (int i = 0; i < obj.at("results").size(); i++) {
+                        nlohmann::json album = obj.at("results").at(i);
+                        std::cout << album << std::endl;
+                        if (album.at("artistName") == g_pPlayer->getMetadata("xesam:artist")) {
+                            std::string url = album.at("artworkUrl100").get<std::string>();
+                            std::cout << url << std::endl;
+                            size_t found = url.find_first_of(":");
+                            std::string url_new = url.substr(found + 3); // url excluding http
+                            size_t found2 = url_new.find_first_of("/");
+                            std::string urlBase = url.substr(0, found + 3) + url_new.substr(0, found2); // baseurl
+                            std::cout << urlBase << std::endl;
+                            std::cout << album.at("artworkUrl100").get<std::string>().erase(0, urlBase.size()) << std::endl;
+                            httplib::Client cli2("https://" + url_new.substr(0, found2));
+                            auto res2 = cli2.Get(album.at("artworkUrl100").get<std::string>().erase(0, urlBase.size()));
+                            std::ofstream fd(CACHE_DIR + "/album_icons/" + replace_all(data, " ", "+"), std::ios::binary);
+                            fd << res2->body;
+                            fd.close();
+                            g_pPlayer->updateMetadata("mpris:artUrl", "file://" + CACHE_DIR + "/album_icons/" + replace_all(data, " ", "+"));
+                            break;
+                        }
+                    }
+                } else {
+                    std::cout << "No results" << std::endl;
+                    std::ofstream fd(CACHE_DIR + "/album_icons/" + replace_all(data, " ", "+"), std::ios::binary);
+                    std::ifstream fd2("/home/10f7c7/Images/funntcat.jpg", std::ios::binary);
+                    fd << fd2.rdbuf();
+                    fd.close();
+                    fd2.close();
+                }
+            }
 
-  return data;
+        } else if (id == 0x22) {
+            key = "xesam:title";
+        } else if (id == 0x23) {
+            key = "mpris:length";
+            std::cout << data << std::endl;
+            data = std::to_string(std::stoi(data) * 1000000);
+            std::cout << data << std::endl;
+        }
+        g_pPlayer->updateMetadata(key, data);
+    }
+
+    std::cout << std::endl;
+
+    return data;
 }
 
 void CAMSServer::disconnectThread() {
-  connection->releaseName(AMS_MPRIS_BUS_NAME);
-  std::cout << "Server disconnected" << std::endl;
-  connection->leaveEventLoop();
-  ams_server_async_thread_active = false;
-  // while (!server_async_thread->joinable()) {
-  //     server_millisecond_delay(10);
-  // }
-  // server_async_thread->join();
-  // delete server_async_thread;
+    connection->releaseName(AMS_MPRIS_BUS_NAME);
+    std::cout << "Server disconnected" << std::endl;
+    connection->leaveEventLoop();
+    ams_server_async_thread_active = false;
+    // while (!server_async_thread->joinable()) {
+    //     server_millisecond_delay(10);
+    // }
+    // server_async_thread->join();
+    // delete server_async_thread;
 }
