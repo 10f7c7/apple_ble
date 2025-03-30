@@ -1,10 +1,11 @@
+#include "AMSServer.hpp"
+#include "ANCSServer.hpp"
+#include "BLE.hpp"
 #include <atomic>
 #include <iostream>
 #include <thread>
 
-#include "AMSServer.hpp"
-#include "ANCSServer.hpp"
-#include "BLE.hpp"
+
 
 std::atomic_bool async_thread_active = true;
 void async_thread_function() {
@@ -20,6 +21,13 @@ void millisecond_delay(int ms) {
 }
 
 int main() {
+  // check if cache dirs exist
+  if (!std::filesystem::exists((CACHE_DIR + "/album_icons")) && (!std::filesystem::exists(CACHE_DIR + "/app_icons"))) {
+    std::filesystem::create_directories(CACHE_DIR + "/album_icons");
+    std::filesystem::create_directories(CACHE_DIR + "/app_icons");
+  }
+
+
   // std::thread* async_thread = new std::thread(async_thread_function);
 
   g_pBLE = std::make_unique<CBLE>();
