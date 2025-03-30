@@ -143,23 +143,21 @@ std::string CAMSServer::transferData(int id, std::string data) {
     } else if (id == 0x21) {
       key = "xesam:album";
       if (std::filesystem::exists(
-              "/home/10f7c7/Document/apple_ble/album_icons/" +
+              CACHE_DIR + "/album_icons/" +
               replace_all(data, " ", "+"))) {
         std::cout << "File exists" << std::endl;
         g_pPlayer->updateMetadata(
             "mpris:artUrl",
-            "file:///home/10f7c7/Documents/apple_ble/album_icons/" +
+            "file://" + CACHE_DIR + "/album_icons/" +
                 replace_all(data, " ", "+"));
       } else {
         std::cout << "File does not exist" << std::endl;
         g_pPlayer->updateMetadata("mpris:artUrl",
                                   "file:///home/10f7c7/Pictures/0_0.jpg");
 
-        httplib::Client cli("http://itunes.apple.com");
-
-        auto res = cli.Get(
-            "/search?media=music&entity=album&attribute=albumTerm&term=" +
-            replace_all(data, " ", "+") + "+&limit=4");
+        httplib::Client cli("https://itunes.apple.com");
+        std::string reqURL = "/search?media=music&entity=album&attribute=albumTerm&term=" + replace_all(data, " ", "+") + "+&limit=4";
+        auto res = cli.Get(reqURL);
         nlohmann::json obj = nlohmann::json::parse(res->body);
 
         if (obj.at("results").size() > 0) {
@@ -180,25 +178,25 @@ std::string CAMSServer::transferData(int id, std::string data) {
                                .get<std::string>()
                                .erase(0, urlBase.size())
                         << std::endl;
-              httplib::Client cli2("http://" + url_new.substr(0, found2));
+              httplib::Client cli2("https://" + url_new.substr(0, found2));
               auto res2 = cli2.Get(album.at("artworkUrl100")
                                        .get<std::string>()
                                        .erase(0, urlBase.size()));
-              std::ofstream fd("/home/10f7c7/Projects/apple_ble/album_icons/" +
+              std::ofstream fd(CACHE_DIR + "/album_icons/" +
                                    replace_all(data, " ", "+"),
                                std::ios::binary);
               fd << res2->body;
               fd.close();
               g_pPlayer->updateMetadata(
                   "mpris:artUrl",
-                  "file:///home/10f7c7/Projects/apple_ble/album_icons/" +
+                  "file://" + CACHE_DIR +"/album_icons/" +
                       replace_all(data, " ", "+"));
               break;
             }
           }
         } else {
           std::cout << "No results" << std::endl;
-          std::ofstream fd("/home/10f7c7/Projects/apple_ble/album_icons/" +
+          std::ofstream fd(CACHE_DIR + "/album_icons/" +
                                replace_all(data, " ", "+"),
                            std::ios::binary);
           std::ifstream fd2("/home/10f7c7/Images/funntcat.jpg",

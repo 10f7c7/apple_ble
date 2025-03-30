@@ -15,10 +15,11 @@ find_package(simpleble REQUIRED CONFIG)
 find_package(nlohmann_json 3.2.0 REQUIRED)
 # include_directories("/usr/include/dbus-1.0")
 # find_package(simplebluez REQUIRED CONFIG)
+find_package(OpenSSL REQUIRED)
 
 file(GLOB_RECURSE SRCFILES CONFIGURE_DEPENDS "src/*.cpp")
 add_executable(apple_ble ${SRCFILES})
-target_link_libraries(apple_ble PUBLIC rt simpleble::simpleble PRIVATE nlohmann_json::nlohmann_json SDBusCpp::sdbus-c++ curl)
+target_link_libraries(apple_ble PUBLIC rt simpleble::simpleble PRIVATE nlohmann_json::nlohmann_json SDBusCpp::sdbus-c++ curl OpenSSL::Crypto OpenSSL::SSL)
 
 # add_executable(server src/server.cpp)
 # target_link_libraries(server sdbus-c++)

@@ -17,30 +17,23 @@ std::string CANCSServer::transferData(ANCS_NOTIF_SRC_ATTR ancs_notif_src) {
   std::cout << "transferData" << std::endl;
   std::cout << "EventID: " << ancs_notif_src.NotificationUID << std::endl;
   std::cout << "EventFlags: " << (int)ancs_notif_src.EventFlags << std::endl;
-  notification_index.insert(
-      {ancs_notif_src.NotificationUID, ancs_notif_src.EventFlags});
+  notification_index.insert({ancs_notif_src.NotificationUID, ancs_notif_src.EventFlags});
   if (ancs_notif_src.EventID == ANCS_EVENT_ID::NotificationRemoved) {
-    std::cout << "phone removed : "
-              << notification_serverid_index[ancs_notif_src.NotificationUID]
-              << std::endl;
-    auto method = proxy->createMethodCall(ANCS_NOTIFICATIONS_IFACE,
-                                          ANCS_NOTIFICATIONS_CLOSE_METHOD);
-    method << (uint32_t)
-            notification_serverid_index[ancs_notif_src.NotificationUID];
+    std::cout << "phone removed : " << notification_serverid_index[ancs_notif_src.NotificationUID] << std::endl;
+    auto method = proxy->createMethodCall(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_CLOSE_METHOD);
+    method << (uint32_t)notification_serverid_index[ancs_notif_src.NotificationUID];
     proxy->callMethod(method);
     notification_serverid_index.erase(ancs_notif_src.NotificationUID);
     notification_index.erase(ancs_notif_src.NotificationUID);
     return "";
   }
-  bool preexist =
-      ancs_notif_src.EventFlags & (1 << ANCS_EVENT_FLAGS::PreExisting);
+  bool preexist = ancs_notif_src.EventFlags & (1 << ANCS_EVENT_FLAGS::PreExisting);
 
   std::vector<uint8_t> action;
 
   if (ancs_notif_src.EventFlags & (1 << ANCS_EVENT_FLAGS::PositiveAction)) {
     action.insert(action.end(), 0x06);
-  } else if (ancs_notif_src.EventFlags &
-             (1 << ANCS_EVENT_FLAGS::NegativeAction)) {
+  } else if (ancs_notif_src.EventFlags & (1 << ANCS_EVENT_FLAGS::NegativeAction)) {
     action.insert(action.end(), 0x07);
   }
 
@@ -49,60 +42,40 @@ std::string CANCSServer::transferData(ANCS_NOTIF_SRC_ATTR ancs_notif_src) {
   return ""; // Placeholder return value
 };
 
-void CANCSServer::write_notification(
-    std::vector<std::variant<std::string, uint32_t>> attr) {
+void CANCSServer::write_notification(std::vector<std::variant<std::string, uint32_t>> attr) {
   std::vector<std::string> action;
 
   bool sendQuiet = false;
 
-  if (notification_index[std::get<uint32_t>(
-          attr.at(ANCS_NOTIF_ATTR::NotificationUID))] &
-      (1 << ANCS_EVENT_FLAGS::PositiveAction)) {
+  if (notification_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] & (1 << ANCS_EVENT_FLAGS::PositiveAction)) {
     std::cout << "POSITIVE_ACTION" << std::endl;
-    action.insert(action.end(),
-                  "10f7c7 0 " + std::to_string((int)std::get<uint32_t>(attr.at(
-                                    ANCS_NOTIF_ATTR::NotificationUID))));
-    action.insert(action.end(), std::get<std::string>(attr.at(
-                                    ANCS_NOTIF_ATTR::PositiveActionLabel)));
-  } else if (notification_index[std::get<uint32_t>(
-                 attr.at(ANCS_NOTIF_ATTR::NotificationUID))] &
-             (1 << ANCS_EVENT_FLAGS::NegativeAction)) {
+    action.insert(action.end(), "10f7c7 0 " + std::to_string((int)std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))));
+    action.insert(action.end(), std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::PositiveActionLabel)));
+  } else if (notification_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] & (1 << ANCS_EVENT_FLAGS::NegativeAction)) {
     std::cout << "NEGATIVE_ACTION" << std::endl;
-    action.insert(action.end(),
-                  "10f7c7 1 " + std::to_string((int)std::get<uint32_t>(attr.at(
-                                    ANCS_NOTIF_ATTR::NotificationUID))));
-    action.insert(action.end(), std::get<std::string>(attr.at(
-                                    ANCS_NOTIF_ATTR::NegativeActionLabel)));
+    action.insert(action.end(), "10f7c7 1 " + std::to_string((int)std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))));
+    action.insert(action.end(), std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::NegativeActionLabel)));
   }
 
-  if (notification_index[std::get<uint32_t>(
-          attr.at(ANCS_NOTIF_ATTR::NotificationUID))] &
-      (1 << ANCS_EVENT_FLAGS::PreExisting)) {
+  if (notification_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] & (1 << ANCS_EVENT_FLAGS::PreExisting)) {
     sendQuiet = true;
   }
 
   std::string appli_name;
 
-  if (!application_index[std::get<std::string>(
-                             attr.at(ANCS_NOTIF_ATTR::AppIdentifier))]
-           .empty()) {
-    appli_name = application_index[std::get<std::string>(
-        attr.at(ANCS_NOTIF_ATTR::AppIdentifier))];
+  if (!application_index[std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier))].empty()) {
+    appli_name = application_index[std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier))];
     std::cout << "appli_name: " << appli_name << std::endl;
   }
 
-  std::string filename =
-      "/home/10f7c7/Documents/apple_ble/app_icons/" +
-      std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)) + ".jpg";
+  std::string filename = CACHE_DIR + "/app_icons/" + std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)) + ".jpg";
   if (std::filesystem::exists(filename)) {
     std::cout << "icon exists" << std::endl;
   } else {
     std::cout << "icon does not exist" << std::endl;
-    httplib::Client cli("http://itunes.apple.com");
+    httplib::Client cli("https://itunes.apple.com");
 
-    auto res =
-        cli.Get("/lookup/?bundleId=" +
-                std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)));
+    auto res = cli.Get("/lookup/?bundleId=" + std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)));
     nlohmann::json obj = nlohmann::json::parse(res->body);
 
     if (obj.at("resultCount") == 0) {
@@ -111,21 +84,15 @@ void CANCSServer::write_notification(
       std::ofstream fd(filename, std::ios::binary);
       fd.close();
     } else {
-      std::string url =
-          obj.at("results").at(0).at("artworkUrl100").get<std::string>();
+      std::string url = obj.at("results").at(0).at("artworkUrl100").get<std::string>();
       std::cout << url << std::endl;
       size_t found = url.find_first_of(":");
       std::string url_new = url.substr(found + 3); // url excluding http
       size_t found2 = url_new.find_first_of("/");
-      std::string urlBase =
-          url.substr(0, found + 3) + url_new.substr(0, found2); // baseurl
+      std::string urlBase = url.substr(0, found + 3) + url_new.substr(0, found2); // baseurl
       std::cout << urlBase << std::endl;
-      httplib::Client cli2("http://" + url_new.substr(0, found2));
-      auto res2 = cli2.Get(obj.at("results")
-                               .at(0)
-                               .at("artworkUrl100")
-                               .get<std::string>()
-                               .erase(0, urlBase.size()));
+      httplib::Client cli2("https://" + url_new.substr(0, found2));
+      auto res2 = cli2.Get(obj.at("results").at(0).at("artworkUrl100").get<std::string>().erase(0, urlBase.size()));
       std::ofstream fd(filename, std::ios::binary);
       fd << res2->body;
       fd.close();
@@ -133,107 +100,55 @@ void CANCSServer::write_notification(
   }
   std::tm tm{};
 
-  tm.tm_year =
-      std::stoi(
-          std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(0, 4)) -
-      1900;
-  tm.tm_mon =
-      std::stoi(
-          std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(4, 2)) -
-      1;
-  tm.tm_mday = std::stoi(
-      std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(6, 2));
-  tm.tm_hour = std::stoi(
-      std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(9, 2));
-  tm.tm_min = std::stoi(
-      std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(11, 2));
-  tm.tm_sec = std::stoi(
-      std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(13, 2));
+  tm.tm_year = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(0, 4)) - 1900;
+  tm.tm_mon = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(4, 2)) - 1;
+  tm.tm_mday = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(6, 2));
+  tm.tm_hour = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(9, 2));
+  tm.tm_min = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(11, 2));
+  tm.tm_sec = std::stoi(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)).substr(13, 2));
   tm.tm_isdst = CANCSServer::isDST;
 
   std::time_t t = std::mktime(&tm);
 
-  auto method = proxy->createMethodCall(ANCS_NOTIFICATIONS_IFACE,
-                                        ANCS_NOTIFICATIONS_NOTIFY_METHOD);
-  std::cout << (notification_serverid_index[std::get<uint32_t>(
-                   attr.at(ANCS_NOTIF_ATTR::NotificationUID))])
-            << std::endl;
-  method << appli_name
-         << (uint32_t)(notification_serverid_index[std::get<uint32_t>(
-                           attr.at(ANCS_NOTIF_ATTR::NotificationUID))] |
-                       0)
-         << filename << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Title))
-         << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Message)) << action
-         << std::map<
-                std::string,
-                std::variant<int32_t, bool, std::time_t>>{{"urgency", 1},
-                                                          {"ancs", true},
-                                                          {"swaync_send_quiet",
-                                                           sendQuiet},
-                                                          {"time", t}}
-         << 10000;
+  auto method = proxy->createMethodCall(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_NOTIFY_METHOD);
+  std::cout << (notification_serverid_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))]) << std::endl;
+  method << appli_name << (uint32_t)(notification_serverid_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] | 0) << filename << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Title)) << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Message)) << action << std::map<std::string, std::variant<int32_t, bool, std::time_t>>{{"urgency", 1}, {"ancs", true}, {"swaync_send_quiet", sendQuiet}, {"time", t}} << 10000;
   auto reply = proxy->callMethod(method);
   uint32_t result;
   reply >> result;
   // notification_serverid_index.insert({
   // std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID)), result });
-  notification_serverid_index[std::get<uint32_t>(
-      attr.at(ANCS_NOTIF_ATTR::NotificationUID))] = result;
-  std::cout << "reply: " << std::to_string(result) << " index : "
-            << notification_serverid_index[std::get<uint32_t>(
-                   attr.at(ANCS_NOTIF_ATTR::NotificationUID))]
-            << std::endl;
+  notification_serverid_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] = result;
+  std::cout << "reply: " << std::to_string(result) << " index : " << notification_serverid_index[std::get<uint32_t>(attr.at(ANCS_NOTIF_ATTR::NotificationUID))] << std::endl;
 }
 
 void CANCSServer::processNotification(std::vector<uint8_t> data) {
   std::cout << "processNotification" << std::endl;
-  std::vector<std::variant<std::string, uint32_t>> attr =
-      decodeNotification(data);
+  std::vector<std::variant<std::string, uint32_t>> attr = decodeNotification(data);
   if (overflow.size() > 0) {
     std::cout << "overflow" << std::endl;
     return;
   }
 
   if (attr.size() > 3) {
-    std::cout << "attr: "
-              << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier))
-              << std::endl;
-    std::cout << "attr: "
-              << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Title))
-              << std::endl;
-    std::cout << "attr: "
-              << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Subtitle))
-              << std::endl;
-    std::cout << "attr: "
-              << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Message))
-              << std::endl;
-    std::cout << "attr: "
-              << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::MessageSize))
-              << std::endl;
-    std::cout << "attr: "
-              << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date))
-              << std::endl;
-    std::cout << "attr: "
-              << std::get<std::string>(
-                     attr.at(ANCS_NOTIF_ATTR::PositiveActionLabel))
-              << std::endl;
-    std::cout << "attr: "
-              << std::get<std::string>(
-                     attr.at(ANCS_NOTIF_ATTR::NegativeActionLabel))
-              << std::endl;
+    std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)) << std::endl;
+    std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Title)) << std::endl;
+    std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Subtitle)) << std::endl;
+    std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Message)) << std::endl;
+    std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::MessageSize)) << std::endl;
+    std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::Date)) << std::endl;
+    std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::PositiveActionLabel)) << std::endl;
+    std::cout << "attr: " << std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::NegativeActionLabel)) << std::endl;
 
-    if (application_index.find(std::get<std::string>(attr.at(
-            ANCS_NOTIF_ATTR::AppIdentifier))) == application_index.end()) {
-      g_pBLE->sendApplicationName(
-          std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)));
+    if (application_index.find(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier))) == application_index.end()) {
+      g_pBLE->sendApplicationName(std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)));
       // if
       // (application_index.find(std::get<std::string>(attr.at(AppIdentifier)))
       // == application_index.end()) {
       //     application_index.insert({
       //     std::get<std::string>(attr.at(AppIdentifier)), "" });
       // }
-      nameless_notification_index.insert(nameless_notification_index.end(),
-                                         std::move(attr));
+      nameless_notification_index.insert(nameless_notification_index.end(), std::move(attr));
       return;
     }
 
@@ -248,16 +163,11 @@ void CANCSServer::processNotification(std::vector<uint8_t> data) {
       display_name = std::get<std::string>(attr.at(0));
     }
     application_index.insert({std::get<std::string>(attr.at(1)), display_name});
-    std::cout << "application_index: " << std::get<std::string>(attr.at(1))
-              << std::endl;
-    std::cout << "display_name: " << std::get<std::string>(attr.at(0))
-              << std::endl
-              << std::endl;
+    std::cout << "application_index: " << std::get<std::string>(attr.at(1)) << std::endl;
+    std::cout << "display_name: " << std::get<std::string>(attr.at(0)) << std::endl << std::endl;
     std::vector<std::vector<std::variant<std::string, uint32_t>>> temp;
     for (int i = 0; i < nameless_notification_index.size(); i++) {
-      if (std::get<std::string>(nameless_notification_index.at(i).at(
-              ANCS_NOTIF_ATTR::AppIdentifier)) ==
-          std::get<std::string>(attr.at(1))) {
+      if (std::get<std::string>(nameless_notification_index.at(i).at(ANCS_NOTIF_ATTR::AppIdentifier)) == std::get<std::string>(attr.at(1))) {
         write_notification(nameless_notification_index.at(i));
       } else {
         temp.insert(temp.end(), nameless_notification_index.at(i));
@@ -292,8 +202,7 @@ CANCSServer::decodeNotification(std::vector<uint8_t> incomedata) {
     i++;
   }
   if (CommandID == ANCS_COMMAND_ID::GetNotificationAttributes) {
-    NotificationUID = (data[i + 3] << 24) | (data[i + 2] << 16) |
-                      (data[i + 1] << 8) | data[i];
+    NotificationUID = (data[i + 3] << 24) | (data[i + 2] << 16) | (data[i + 1] << 8) | data[i];
     i += 4;
     flags = notification_index[NotificationUID];
   }
@@ -414,29 +323,20 @@ void CANCSServer::notification_action(sdbus::Signal signal) {
     raw_data.insert(raw_data.end(), ((stoiid >> (8 * i)) & 0xff));
   }
 
-  std::cout << std::to_string(raw_data.at(0)) << " "
-            << std::to_string(raw_data.at(1)) << " "
-            << std::to_string(raw_data.at(2)) << " "
-            << std::to_string(raw_data.at(3)) << std::endl;
+  std::cout << std::to_string(raw_data.at(0)) << " " << std::to_string(raw_data.at(1)) << " " << std::to_string(raw_data.at(2)) << " " << std::to_string(raw_data.at(3)) << std::endl;
   notification_index.erase(stoiid);
   g_pBLE->sendNotificationAction(raw_data, std::stoi(data.at(1)));
 }
 
 void CANCSServer::init() {
 
-  CANCSServer::isDST = date::current_zone()
-                           ->get_info(std::chrono::system_clock::now())
-                           .save.count();
+  CANCSServer::isDST = date::current_zone()->get_info(std::chrono::system_clock::now()).save.count();
 
-  std::thread *ancs_server_async_thread =
-      new std::thread(ancs_server_async_thread_function);
+  std::thread *ancs_server_async_thread = new std::thread(ancs_server_async_thread_function);
 
-  proxy =
-      sdbus::createProxy(ANCS_NOTIFICATIONS_SNAME, ANCS_NOTIFICATIONS_OPATH);
+  proxy = sdbus::createProxy(ANCS_NOTIFICATIONS_SNAME, ANCS_NOTIFICATIONS_OPATH);
 
-  proxy->registerSignalHandler(
-      ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_SIGNAL,
-      [this](sdbus::Signal signal) { notification_action(signal); });
+  proxy->registerSignalHandler(ANCS_NOTIFICATIONS_IFACE, ANCS_NOTIFICATIONS_SIGNAL, [this](sdbus::Signal signal) { notification_action(signal); });
 
   while (ancs_server_async_thread_active) {
     std::this_thread::sleep_for(std::chrono::microseconds(100));
