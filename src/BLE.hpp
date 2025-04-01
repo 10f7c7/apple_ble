@@ -1,12 +1,12 @@
 #pragma once
 
-#include <vector>
+#include "ble-const.hpp"
 #include <memory>
 #include <simpleble/SimpleBLE.h>
-#include "ble-const.hpp"
+#include <vector>
 
 class CBLE {
-public:
+  public:
     void init();
     int disconnect();
     std::string transferData(std::string);
@@ -17,9 +17,9 @@ public:
     void disconnectThread();
 
     SimpleBLE::Peripheral connection;
-private:
-    std::thread* ble_async_thread;
 
+  private:
+    std::thread *ble_async_thread;
 };
 
 inline std::unique_ptr<CBLE> g_pBLE;

@@ -32,10 +32,10 @@ const std::string ANCS_DATA_SRC_UUID = "22eac6e9-24d6-4bb5-be44-b36ace7c7bfb";
 const std::string CACHE_DIR = std::string(std::getenv("HOME")) + "/.cache/10f7c7/apple_ble";
 
 struct ANCS_NOTIF_SRC_ATTR {
-  uint8_t EventID;
-  uint8_t EventFlags;
-  uint8_t CategoryID;
-  uint8_t CategoryCount;
-  std::vector<int> NotificationUIDvec;
-  uint32_t NotificationUID;
+    uint8_t EventID;
+    uint8_t EventFlags;
+    uint8_t CategoryID;
+    uint8_t CategoryCount;
+    std::vector<int> NotificationUIDvec;
+    uint32_t NotificationUID;
 };
