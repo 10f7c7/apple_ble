@@ -6,14 +6,16 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cstring>
 #include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <httplib.h>
 #include <iostream>
 #include <memory>
-#include <nlohmann/json.hpp>
+// #include <nlohmann/json.hpp>
 #include <sdbus-c++/sdbus-c++.h>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <tuple>
@@ -55,6 +57,7 @@ class CANCSServer {
     };
     std::vector<std::variant<std::string, uint32_t>> decodeNotification(std::vector<uint8_t>);
     void processNotification(std::vector<uint8_t>);
+    void processApp(std::vector<uint8_t>);
     void write_notification(std::vector<std::variant<std::string, uint32_t>>);
     void notification_action(sdbus::Signal);
     std::vector<uint8_t> overflow;

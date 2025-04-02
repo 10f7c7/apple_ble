@@ -1,4 +1,5 @@
 #include "ANCSServer.hpp"
+#include "../include/rapidjson/document.h"
 
 std::atomic_bool ancs_server_async_thread_active = true;
 void ancs_server_async_thread_function() {
@@ -75,16 +76,26 @@ void CANCSServer::write_notification(std::vector<std::variant<std::string, uint3
         std::cout << "icon does not exist" << std::endl;
         httplib::Client cli("https://itunes.apple.com");
 
-        auto res = cli.Get("/lookup/?bundleId=" + std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)));
-        nlohmann::json obj = nlohmann::json::parse(res->body);
+        rapidjson::Document iconBody;
+        // auto res = cli.Get("/lookup/?bundleId=" + std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)));
+        cli.Get("/lookup/?bundleId=" + std::get<std::string>(attr.at(ANCS_NOTIF_ATTR::AppIdentifier)), [&](const char *data, size_t data_length) {
+            iconBody.Parse(data, data_length);
+            return true;
+        });
+        // nlohmann::json obj = nlohmann::json::parse(res->body);
+        // auto bodystream = std::istringstream(res->body);
+        // document.ParseStream(bodystream);
 
-        if (obj.at("resultCount") == 0) {
+        // if (obj.at("resultCount") == 0) {
+        if (iconBody["resultCount"].GetInt() == 0) {
+
             std::cout << "No results" << std::endl;
             // appli_name = "rats";
             std::ofstream fd(filename, std::ios::binary);
             fd.close();
         } else {
-            std::string url = obj.at("results").at(0).at("artworkUrl100").get<std::string>();
+            // std::string url = obj.at("results").at(0).at("artworkUrl100").get<std::string>();
+            std::string url = iconBody["results"][0]["artworkUrl100"].GetString();
             std::cout << url << std::endl;
             size_t found = url.find_first_of(":");
             std::string url_new = url.substr(found + 3); // url excluding http
@@ -92,7 +103,8 @@ void CANCSServer::write_notification(std::vector<std::variant<std::string, uint3
             std::string urlBase = url.substr(0, found + 3) + url_new.substr(0, found2); // baseurl
             std::cout << urlBase << std::endl;
             httplib::Client cli2("https://" + url_new.substr(0, found2));
-            auto res2 = cli2.Get(obj.at("results").at(0).at("artworkUrl100").get<std::string>().erase(0, urlBase.size()));
+            // auto res2 = cli2.Get(obj.at("results").at(0).at("artworkUrl100").get<std::string>().erase(0, urlBase.size()));
+            auto res2 = cli2.Get(url.erase(0, urlBase.size()));
             std::ofstream fd(filename, std::ios::binary);
             fd << res2->body;
             fd.close();
